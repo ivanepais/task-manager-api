@@ -39,6 +39,7 @@ export class TasksController {
 }
 */
 
+/*
 import { Controller, Get, Post, Put, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import type { Task } from './task.model';
@@ -80,5 +81,59 @@ export class TasksController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string): void {
     this.tasksService.remove(id);
+  }
+}
+
+*/
+
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  HttpCode,
+  HttpStatus,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { TasksService } from './tasks.service';
+import { TaskEntity } from './entities/task.entity';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
+
+@Controller('tasks')
+export class TasksController {
+  constructor(private readonly tasksService: TasksService) {}
+
+  @Get()
+  async findAll(): Promise<TaskEntity[]> {
+    return await this.tasksService.findAll();
+  }
+
+  @Get(':id')
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<TaskEntity> {
+    return await this.tasksService.findOne(id);
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() createTaskDto: CreateTaskDto): Promise<TaskEntity> {
+    return await this.tasksService.create(createTaskDto);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+  ): Promise<TaskEntity> {
+    return await this.tasksService.update(id, updateTaskDto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.tasksService.remove(id);
   }
 }

@@ -1,3 +1,4 @@
+/*
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Task } from './task.model'; // Modelo interno
 import { CreateTaskDto } from './dto/create-task.dto'; // DTO para creación
@@ -52,5 +53,47 @@ export class TasksService {
       throw new NotFoundException(`La tarea con ID "${id}" no existe.`);
     }
     this.tasks.splice(index, 1);
+  }
+}
+*/
+
+
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { TaskEntity } from './entities/task.entity';
+import { CreateTaskDto } from './dto/create-task.dto';
+
+@Injectable()
+export class TasksService {
+  constructor(
+    @InjectRepository(TaskEntity)
+    private readonly taskRepository: Repository<TaskEntity>,
+  ) {}
+
+  async findAll(): Promise<TaskEntity[]> {
+    return await this.taskRepository.find();
+  }
+
+  async findOne(id: string): Promise<TaskEntity> {
+    const task = await this.taskRepository.findOneBy({ id });
+    if (!task) {
+      throw new NotFoundException(`Tarea con ID "${id}" no encontrada`);
+    }
+    return task;
+  }
+
+  async create(createTaskDto: CreateTaskDto): Promise<TaskEntity> {
+    // 1. Crea la instancia de la entidad respetando las reglas de clase
+    const newTask = this.taskRepository.create(createTaskDto);
+    // 2. Persiste la entidad en PostgreSQL (ejecuta INSERT)
+    return await this.taskRepository.save(newTask);
+  }
+
+  async remove(id: string): Promise<void> {
+    const result = await this.taskRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Tarea con ID "${id}" no encontrada`);
+    }
   }
 }
