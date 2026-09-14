@@ -7,6 +7,8 @@ import { TaskEntity } from './entities/task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
+import { User } from '../users/entities/user.entity';
+
 @Injectable()
 export class TasksService {
   constructor(
@@ -21,38 +23,45 @@ export class TasksService {
     console.log(`TasksService inicializado en entorno: ${env}`);
   }
 
-  // Obtenemos todas las tareas desde PostgreSQL
-  async findAll(): Promise<TaskEntity[]> {
-    return await this.taskRepository.find();
+  // tareas del usuario autenticado
+  async findAll(user: User): Promise<TaskEntity[]> {
+    return await this.taskRepository.find({
+      where: { user: { id: user.id } },
+    });
   }
 
-  // Buscamos una tarea por ID (UUID en PostgreSQL)
-  async findOne(id: string): Promise<TaskEntity> {
-    const task = await this.taskRepository.findOneBy({ id });
+  // Busca una tarea por ID filtrando que pertenezca al usuario
+  async findOne(id: string, user: User): Promise<TaskEntity> {
+    const task = await this.taskRepository.findOne({
+      where: { id, user: { id: user.id } },
+    });
     if (!task) {
       throw new NotFoundException(`La tarea con ID "${id}" no existe.`);
     }
     return task;
   }
 
-  // Creamos la instancia en memoria y la persistimos con INSERT
-  async create(createTaskDto: CreateTaskDto): Promise<TaskEntity> {
-    const newTask = this.taskRepository.create(createTaskDto);
-    return await this.taskRepository.save(newTask);
+  // Asigna la relación del usuario a la nueva tarea
+  async create(createTaskDto: CreateTaskDto, user: User): Promise<TaskEntity> {
+    const newTask = this.taskRepository.create({
+      ...createTaskDto,
+      user, // Asigna el objeto User completo a la tarea
+    });
+    await this.taskRepository.save(newTask);
+    delete (newTask as Partial<TaskEntity>).user;
+    return newTask;
   }
 
-  // Buscamos la tarea, aplicamos los cambios del DTO y ejecutamos UPDATE
-  async update(id: string, updateTaskDto: UpdateTaskDto): Promise<TaskEntity> {
-    const task = await this.findOne(id); // Reutiliza findOne para lanzar 404 si no existe
-    Object.assign(task, updateTaskDto);   // Aplica solo los campos enviados en el DTO
-    return await this.taskRepository.save(task); // Si la entidad ya tiene 'id', save() realiza UPDATE
+  // Actualiza la tarea validando primero la propiedad mediante findOne
+  async update(id: string, updateTaskDto: UpdateTaskDto, user: User): Promise<TaskEntity> {
+    const task = await this.findOne(id, user); // Reutiliza findOne para lanzar 404 si no existe
+    const updatedTask = this.taskRepository.merge(task, updateTaskDto);
+    return await this.taskRepository.save(updatedTask); // Si la entidad ya tiene 'id', save() realiza UPDATE
   }
 
-  // Eliminamos directamente por ID y verificamos el número de filas afectadas
-  async remove(id: string): Promise<void> {
-    const result = await this.taskRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`La tarea con ID "${id}" no existe.`);
-    }
+  // Elimina la tarea asegurando pertenencia al usuario
+  async remove(id: string, user: User): Promise<void> {
+    const task = await this.findOne(id, user); // Valida
+    await this.taskRepository.remove(task);
   }
 }

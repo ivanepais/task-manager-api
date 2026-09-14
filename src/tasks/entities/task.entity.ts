@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne
 } from 'typeorm';
+
+import { User } from '../../users/entities/user.entity';
 
 @Entity('tasks')
 export class TaskEntity {
@@ -25,4 +28,7 @@ export class TaskEntity {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @ManyToOne(() => User, (user) => user.tasks, { eager: false })
+  user: User;
 }

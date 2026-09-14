@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import * as Joi from 'joi';
 
 import { TasksModule } from './tasks/tasks.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { TasksModule } from './tasks/tasks.module';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
+        JWT_EXPIRES_IN: Joi.string().default('1d'),
       }),
     }),
 
@@ -48,6 +52,8 @@ import { TasksModule } from './tasks/tasks.module';
     }),
 
     TasksModule,
+    UsersModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],
