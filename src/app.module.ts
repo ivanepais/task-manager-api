@@ -6,6 +6,7 @@ import * as Joi from 'joi';
 import { TasksModule } from './tasks/tasks.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -51,9 +52,10 @@ import { AuthModule } from './auth/auth.module';
       }),
     }),
 
+    AuthModule,
     TasksModule,
     UsersModule,
-    AuthModule,
+    CategoriesModule,
   ],
   controllers: [],
   providers: [],

@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,6 +14,8 @@ import { RegisterUserDto } from './dto';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -23,10 +26,11 @@ export class UsersService {
    */
   async create(registerUserDto: RegisterUserDto): Promise<User> {
     const { email, password, fullName } = registerUserDto;
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // 1. Verificar si el usuario ya existe
+    // 1. Verificación previa de existencia
     const existingUser = await this.userRepository.findOne({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
@@ -34,32 +38,36 @@ export class UsersService {
     }
 
     try {
-      // 2. Generar el hash de la contraseña (salt round = 10)
+      // 2. Generar hash de la contraseña (salt = 10)
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // 3. Crear la instancia de la entidad
+      // 3. Crear e instanciar
       const user = this.userRepository.create({
-        email,
+        email: normalizedEmail,
         fullName,
         password: hashedPassword,
       });
 
-      // 4. Guardar en PostgreSQL
       await this.userRepository.save(user);
 
-      // 5. Eliminar el hash de la contraseña de la respuesta devuelta
+      // 4. Limpiar datos sensibles del retorno
       delete (user as Partial<User>).password;
       return user;
     } catch (error) {
+      // Capturar violaciones de restricción única de Postgres (Race condition)
+      if (error.code === '23505') {
+        throw new ConflictException('El correo electrónico ya está registrado');
+      }
+
+      this.logger.error(`Error al crear usuario: ${error.message}`, error.stack);
       throw new InternalServerErrorException(
-        'Ocurrió un error al registrar el usuario',
+        'Ocurrió un error inesperado al registrar el usuario',
       );
     }
   }
 
   /**
-   * Busca un usuario por email INCLUYENDO la contraseña (necesario para el Login).
-   * Dado que en User entity definimos { select: false }, debemos solicitar el campo explícitamente.
+   * Busca un usuario por email incluyendo la contraseña (uso exclusivo de Auth).
    */
   async findByEmailWithPassword(email: string): Promise<User | null> {
     return this.userRepository
@@ -70,7 +78,7 @@ export class UsersService {
   }
 
   /**
-   * Busca un usuario activo por su ID (utilizado por el Guard de JWT para validar sesiones).
+   * Busca un usuario activo por su ID (validación de sesiones/guards).
    */
   async findById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
