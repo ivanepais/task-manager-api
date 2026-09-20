@@ -8,6 +8,8 @@ import {
   ManyToOne,
   ManyToMany,
   JoinTable,
+  JoinColumn,
+  Index,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
@@ -15,6 +17,7 @@ import { User } from '../../users/entities/user.entity';
 import { CategoryEntity } from '../../categories/entities/category.entity';
 
 @Entity('tasks')
+@Index(['userId', 'completed'])
 export class TaskEntity {
   @ApiProperty({
     description: 'Identificador único UUID v4 de la tarea',
@@ -25,14 +28,14 @@ export class TaskEntity {
 
   @ApiProperty({
     description: 'Título descriptivo de la tarea',
-    example: 'Configurar documentación OpenAPI con Swagger',
+    example: 'Escribir una función que retorne "Hola Mundo!"',
   })
-  @Column({ type: 'varchar', length: 120, nullable: false })
+  @Column({ type: 'varchar', length: 100, nullable: false })
   title: string;
 
   @ApiPropertyOptional({
     description: 'Descripción detallada de la tarea',
-    example: 'Añadir decoradores de Swagger a los DTOs, controladores y entidades.',
+    example: 'Usando una función flecha.',
     nullable: true,
   })
   @Column({ type: 'text', nullable: true })
@@ -50,29 +53,34 @@ export class TaskEntity {
     description: 'Fecha y hora de creación de la tarea',
     example: '2026-09-16T12:00:00.000Z',
   })
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
   @ApiProperty({
     description: 'Fecha y hora de la última actualización',
     example: '2026-09-16T12:00:00.000Z',
   })
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
   @ApiPropertyOptional({
-    description: 'Fecha y hora de eliminación lógica (Soft Delete)',
+    description: 'Fecha y hora de eliminación',
     example: null,
     nullable: true,
   })
-  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt?: Date;
+
+  // Clave foránea explícita para evitar JOINs pesados en lecturas
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId: string;
 
   @ApiHideProperty()
   @ManyToOne(() => User, (user) => user.tasks, { 
     onDelete: 'CASCADE', // Borra las tareas si se elimina el usuario en la BD
     eager: false,        // Evita JOINs automáticos no deseados (por defecto)
   })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   // Relación Muchos a Muchos con Categorías

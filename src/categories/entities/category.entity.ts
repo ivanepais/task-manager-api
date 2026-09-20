@@ -6,12 +6,17 @@ import {
   UpdateDateColumn,
   ManyToOne,
   ManyToMany,
+  JoinColumn,
+  Unique,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { TaskEntity } from '../../tasks/entities/task.entity';
 import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
 
 @Entity('categories')
+@Unique(['name', 'userId'])
+@Index(['userId'])
 export class CategoryEntity {
   @ApiProperty({
     description: 'Identificador único UUID v4 de la categoría',
@@ -22,9 +27,9 @@ export class CategoryEntity {
 
   @ApiProperty({
     description: 'Nombre asignado a la categoría',
-    example: 'Trabajo',
+    example: 'Work',
   })
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'varchar', length: 50, nullable: false })
   name: string;
 
   @ApiProperty({
@@ -39,21 +44,26 @@ export class CategoryEntity {
     description: 'Fecha y hora de creación de la categoría',
     example: '2026-09-15T19:02:10.149Z',
   })
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
   @ApiProperty({
     description: 'Fecha y hora de la última actualización',
     example: '2026-09-15T19:02:10.149Z',
   })
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
+
+  // Clave foránea explícita requerida por las consultas directas en servicios
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId: string;
 
   // Cada categoría pertenece a un usuario (Aislamiento por usuario)
   @ApiHideProperty()
-  @ManyToOne(() => User, (user) => user.categories, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.categories, { onDelete: 'CASCADE', eager: false, })
+  @JoinColumn({ name: 'user_id' })
   user: User;
-
+  
   // Una categoría puede estar en muchas tareas
   @ApiHideProperty()
   @ManyToMany(() => TaskEntity, (task) => task.categories)

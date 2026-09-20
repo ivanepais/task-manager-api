@@ -5,9 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
-  BeforeInsert,
-  BeforeUpdate,
-  OneToMany
+  OneToMany,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
 
@@ -27,20 +25,22 @@ export class User {
     description: 'Correo electrónico único del usuario',
     example: 'pepe@example.com',
   })
-  @Column({ unique: true })
+  @Column({
+    unique: true,
+    length: 255,
+  })
   email: string;
 
-  // { select: false } evita que la contraseña se incluya automáticamente en las consultas SELECT
   @ApiHideProperty()
   @Column({ select: false })
   password: string;
 
   @ApiProperty({
-    description: 'Nombre completo del usuario',
-    example: 'Pepe Perez',
+    description: 'Nombre de usuario',
+    example: 'Pepe',
   })
-  @Column({ name: 'full_name' })
-  fullName: string;
+  @Column({ name: 'user_name', length: 100 })
+  userName: string;
 
   @ApiProperty({
     description: 'Estado de la cuenta del usuario',
@@ -55,7 +55,7 @@ export class User {
     example: ['user'],
     type: [String],
   })
-  @Column('simple-array', { default: 'user' })
+  @Column('text', { array: true, default: ['user'] })
   roles: string[];
 
   @ApiProperty({
@@ -73,24 +73,17 @@ export class User {
   updatedAt: Date;
 
   @ApiPropertyOptional({
-    description: 'Fecha y hora de desactivación/eliminación lógica',
+    description: 'Fecha y hora de desactivación/eliminació',
     example: null,
     nullable: true,
   })
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
 
-  // Normaliza el email a minúsculas antes de guardar o actualizar
-  @BeforeInsert()
-  @BeforeUpdate()
-  checkFieldsBeforeInsert() {
-    this.email = this.email.toLowerCase().trim();
-  }
-
   @ApiHideProperty()
   @OneToMany(() => TaskEntity, (task) => task.user)
   tasks: TaskEntity[];
-  
+
   @ApiHideProperty()
   @OneToMany(() => CategoryEntity, (category) => category.user)
   categories: CategoryEntity[];

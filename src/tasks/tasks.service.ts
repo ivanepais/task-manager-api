@@ -1,20 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 
 import { TaskEntity } from './entities/task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
-import { User } from '../users/entities/user.entity';
 import { CategoryEntity } from '../categories/entities/category.entity';
-
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 
 @Injectable()
 export class TasksService {
+
   constructor(
     // 1. Inyección del repositorio de TypeORM para la tabla 'tasks'
     @InjectRepository(TaskEntity)
@@ -22,22 +20,17 @@ export class TasksService {
     
     @InjectRepository(CategoryEntity)
     private readonly categoryRepository: Repository<CategoryEntity>,
-
-    // 2. Mantenemos ConfigService si necesitas leer variables de entorno en el servicio
-    private readonly configService: ConfigService,
-  ) {
-    const env = this.configService.get<string>('ENVIRONMENT');
-    console.log(`TasksService inicializado en entorno: ${env}`);
-  }
+  ) {}
 
   // tareas del usuario autenticado con sus categorias 
-  async findAll(queryDto: PaginationQueryDto, user: User): Promise<PaginatedResponse<TaskEntity>> {
+  async findAll(queryDto: PaginationQueryDto, userId: string,): Promise<PaginatedResponse<TaskEntity>> {
     const { limit = 10, page = 1, completed, search, categoryId } = queryDto;
     const skip = (page - 1) * limit;
       
-    const query = this.taskRepository.createQueryBuilder('task')
+    const query = this.taskRepository
+      .createQueryBuilder('task')
       .leftJoinAndSelect('task.categories', 'category')
-      .where('task.userId = :userId', { userId: user.id });
+      .where('task.userId = :userId', { userId });
     
     // Filtro por estado completed
     if (completed !== undefined) {
@@ -75,9 +68,9 @@ export class TasksService {
   }
 
   // Busca una tarea por ID filtrando que pertenezca al usuario
-  async findOne(id: string, user: User): Promise<TaskEntity> {
+  async findOne(id: string, userId: string): Promise<TaskEntity> {
     const task = await this.taskRepository.findOne({
-      where: { id, user: { id: user.id } },
+      where: { id, userId },
       relations: {
         categories: true,
       },
@@ -89,37 +82,51 @@ export class TasksService {
   }
 
   // Crea la tarea y asocia las categorías que pertenecen al usuario
-  async create(createTaskDto: CreateTaskDto, user: User): Promise<TaskEntity> {
+  async create(createTaskDto: CreateTaskDto, userId: string): Promise<TaskEntity> {
     const { categoryIds, ...taskData } = createTaskDto;
     let categories: CategoryEntity[] = [];
     
     if (categoryIds && categoryIds.length > 0) {
       categories = await this.categoryRepository.find({
-        where: { id: In(categoryIds), user: { id: user.id } },
+        where: { id: In(categoryIds), userId },
       });
+
+      if (categories.length !== categoryIds.length) {
+        throw new BadRequestException(
+          'Una o más categorías especificadas no existen o no te pertenecen.',
+        );
+      }
     }
     
     const newTask = this.taskRepository.create({
       ...taskData,
-      user,
+      userId,
       categories,
     });
-    await this.taskRepository.save(newTask);
-    delete (newTask as Partial<TaskEntity>).user;
-    return newTask;
+
+    return await this.taskRepository.save(newTask);
   }
 
   // Actualiza datos y sincroniza las categorías si se pasan categoryIds
-  async update(id: string, updateTaskDto: UpdateTaskDto, user: User): Promise<TaskEntity> {
+  async update(id: string, updateTaskDto: UpdateTaskDto, userId: string,): Promise<TaskEntity> {
     const { categoryIds, ...taskData } = updateTaskDto;
-    const task = await this.findOne(id, user);
+    const task = await this.findOne(id, userId);
 
     if (categoryIds !== undefined) {
-      task.categories = categoryIds.length > 0
-        ? await this.categoryRepository.find({
-            where: { id: In(categoryIds), user: { id: user.id } },
-          })
-        : [];
+      if (categoryIds.length > 0) {
+        const categories = await this.categoryRepository.find({
+          where: { id: In(categoryIds), userId },
+        });
+
+        if (categories.length !== categoryIds.length) {
+          throw new BadRequestException(
+            'Una o más categorías especificadas no existen o no te pertenecen.',
+          );
+        }
+        task.categories = categories;
+      } else {
+        task.categories = [];
+      }
     }
 
     this.taskRepository.merge(task, taskData);
@@ -127,15 +134,15 @@ export class TasksService {
   }
 
   // Elimina la tarea asegurando pertenencia al usuario
-  async remove(id: string, user: User): Promise<void> {
-    const task = await this.findOne(id, user);
+  async remove(id: string, userId: string): Promise<void> {
+    const task = await this.findOne(id, userId);
     await this.taskRepository.softRemove(task);
   }
 
   // Restaurar una tarea previamente borrada
-  async restore(id: string, user: User): Promise<TaskEntity> {
+  async restore(id: string, userId: string): Promise<TaskEntity> {
     const task = await this.taskRepository.findOne({
-      where: { id, user: { id: user.id } },
+      where: { id, userId },
       withDeleted: true, // Permite encontrar registros con deletedAt !== null
       relations: { categories: true },
     });
