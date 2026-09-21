@@ -62,14 +62,14 @@ export class User {
     description: 'Fecha y hora de registro del usuario',
     example: '2026-09-16T12:00:00.000Z',
   })
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
   @ApiProperty({
     description: 'Fecha y hora de la última actualización de perfil',
     example: '2026-09-16T12:00:00.000Z',
   })
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
   @ApiPropertyOptional({
@@ -77,8 +77,8 @@ export class User {
     example: null,
     nullable: true,
   })
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date;
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date;
 
   @ApiHideProperty()
   @OneToMany(() => TaskEntity, (task) => task.user)

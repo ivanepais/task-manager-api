@@ -47,7 +47,7 @@ import { CategoriesModule } from './categories/categories.module';
         autoLoadEntities: true,
         // Sincroniza automáticamente cambios de entidades con la BD en desarrollo.
         // 
-        synchronize: true, // Solo para desarrollo, en prod usar migraciones
+        synchronize: false,
         logging: ['query', 'error'],
       }),
     }),

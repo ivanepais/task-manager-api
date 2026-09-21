@@ -135,8 +135,16 @@ export class TasksService {
 
   // Elimina la tarea asegurando pertenencia al usuario
   async remove(id: string, userId: string): Promise<void> {
-    const task = await this.findOne(id, userId);
-    await this.taskRepository.softRemove(task);
+    // Executa un UPDATE directo en SQL sin tocar relaciones ni realizar cascadas innecesarias
+    const result = await this.taskRepository.softDelete({
+      id,
+      user: { id: userId },
+    });
+
+    // Si no afectó ninguna fila, la tarea no existía o no pertenecía a este usuario
+    if (result.affected === 0) {
+      throw new NotFoundException(`Tarea con ID "${id}" no encontrada`);
+    }
   }
 
   // Restaurar una tarea previamente borrada

@@ -89,7 +89,7 @@ export class TaskEntity {
     type: () => [CategoryEntity],
   })
   @ManyToMany(() => CategoryEntity, (category) => category.tasks, {
-    cascade: true,
+    cascade: ['insert', 'update'],
   })
   @JoinTable({
     name: 'task_categories', // Nombre de la tabla pivote en PostgreSQL
