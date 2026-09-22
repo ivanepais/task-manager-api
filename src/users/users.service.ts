@@ -84,18 +84,41 @@ export class UsersService {
       .addSelect('user.password')
       .getOne();
   }
-
   
   // Busca un usuario activo por su ID (validación de sesiones/guards).
   async findById(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id, isActive: true },
-    });
+    const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException(`Usuario no encontrado o inactivo`);
+      throw new NotFoundException(`Usuario con ID "${id}" no encontrado`);
     }
 
     return user;
+  }
+
+  // Busca un usuario por ID incluyendo la columna hashedRefreshToken (Uso exclusivo de Auth)
+  async findByIdWithRefreshToken(id: string): Promise<User> {
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id = :id', { id })
+      .addSelect('user.hashedRefreshToken')
+      .getOne();
+
+    if (!user) {
+      throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+    }
+
+    return user;
+  }
+
+  // Gestión interna de sesiones/autenticación: Modifica directamente la columna hashed_refresh_token sin pasar por DTOs públicos.
+  async updateHashedRefreshToken(userId: string, hashedRefreshToken: string | null): Promise<void> {
+    const result = await this.userRepository.update(userId, {
+      hashedRefreshToken,
+    });
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
+    }
   }
 }

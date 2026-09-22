@@ -1,9 +1,14 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 import { AuthService } from './auth.service';
 import { RegisterUserDto, LoginUserDto } from '../users/dto';
 
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, } from '@nestjs/swagger';
+
+import { GetUser } from './decorators/get-user.decorator';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { User } from '../users/entities/user.entity';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -51,5 +56,33 @@ export class AuthController {
   })
   login(@Body() loginUserDto: LoginUserDto) {
     return this.authService.login(loginUserDto);
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtRefreshGuard)
+  @ApiBearerAuth('refresh-token')
+  @ApiOperation({
+    summary: 'Renovar tokens de acceso',
+    description: 'Recibe un Refresh Token válido en las cabeceras Bearer, lo valida contra BD y devuelve un nuevo par de tokens.',
+  })
+  @ApiResponse({ status: 200, description: 'Tokens renovados exitosamente.' })
+  @ApiResponse({ status: 403, description: 'Refresh Token inválido o expirado.' })
+  refreshTokens(
+    @GetUser('id') userId: string,
+    @GetUser('refreshToken') refreshToken: string,
+  ) {
+    return this.authService.refreshTokens(userId, refreshToken);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Cerrar sesión de usuario y revocar Refresh Token' })
+  @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente.' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
+  logout(@GetUser('id') userId: string) {
+    return this.authService.logout(userId);
   }
 }

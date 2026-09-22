@@ -12,6 +12,7 @@ import {
   Index,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
+import { Exclude } from 'class-transformer';
 
 import { User } from '../../users/entities/user.entity';
 import { CategoryEntity } from '../../categories/entities/category.entity';
@@ -63,12 +64,9 @@ export class TaskEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
-  @ApiPropertyOptional({
-    description: 'Fecha y hora de eliminación',
-    example: null,
-    nullable: true,
-  })
-  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  @ApiHideProperty()
+  @Exclude()
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, select: false, })
   deletedAt?: Date;
 
   // Clave foránea explícita para evitar JOINs pesados en lecturas

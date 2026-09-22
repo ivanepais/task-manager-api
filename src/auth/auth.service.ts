@@ -1,10 +1,12 @@
 import {
   Injectable,
   UnauthorizedException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
 
 import { UsersService } from '../users/users.service';
 import { RegisterUserDto, LoginUserDto } from '../users/dto';
@@ -17,14 +19,16 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   // Registra un nuevo usuario y retorna sus datos junto con el Token JWT.
   async register(registerUserDto: RegisterUserDto) {
     const user = await this.usersService.create(registerUserDto);
-    const token = await this.getJwtToken({ id: user.id, email: user.email });
+    const tokens = await this.getTokens(user.id, user.email);
+    await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
 
-    return { user, token };
+    return { user, ...tokens };
   }
 
   // Autentica credenciales (email y contraseña) y retorna el Token JWT.
@@ -57,16 +61,65 @@ export class AuthService {
     const { password: _, ...userWithoutPassword } = user;
 
     // 4. Firmar y retornar el token
-    const token = await this.getJwtToken({ id: user.id, email: user.email });
+    const tokens = await this.getTokens(user.id, user.email);
+
+    await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
 
     return {
       user: userWithoutPassword,
-      token,
+      ...tokens,
     };
   }
 
-  // Genera y firma un token JWT asíncronamente.
-  private async getJwtToken(payload: JwtPayload): Promise<string> {
-    return this.jwtService.signAsync(payload);
+  async refreshTokens(userId: string, refreshToken: string) {
+    const user = await this.usersService.findByIdWithRefreshToken(userId);
+
+    if (!user || !user.hashedRefreshToken) {
+      throw new ForbiddenException('Acceso denegado: Sesión no encontrada');
+    }
+
+    const rtMatches = await bcrypt.compare(refreshToken, user.hashedRefreshToken);
+    if (!rtMatches) {
+      throw new ForbiddenException('Acceso denegado: Refresh Token inválido');
+    }
+
+    // Rotación de Tokens: Se expide un par completamente nuevo
+    const tokens = await this.getTokens(user.id, user.email);
+    await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
+
+    return tokens;
+  }
+
+  // 4. Logout (Revocación remota)
+  async logout(userId: string) {
+    await this.usersService.updateHashedRefreshToken(userId, null);
+    return { message: 'Sesión cerrada exitosamente' };
+  }
+
+  // Helper: Generar par de tokens (AT + RT)
+  private async getTokens(userId: string, email: string) {
+    const jwtPayload: JwtPayload = { id: userId, email };
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(jwtPayload, {
+        secret: this.configService.getOrThrow<string>('JWT_SECRET'),
+        expiresIn: this.configService.getOrThrow<JwtSignOptions['expiresIn']>('JWT_EXPIRES_IN'),
+      }),
+      this.jwtService.signAsync(jwtPayload, {
+        secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.getOrThrow<JwtSignOptions['expiresIn']>('JWT_REFRESH_EXPIRES_IN'),
+      }),
+    ]);
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  // Helper: Guardar el RT hasheado en la base de datos
+  private async updateHashedRefreshToken(userId: string, refreshToken: string) {
+    const hash = await bcrypt.hash(refreshToken, 10);
+    await this.usersService.updateHashedRefreshToken(userId, hash);
   }
 }

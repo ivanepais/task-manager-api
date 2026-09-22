@@ -8,6 +8,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
+import { Exclude } from 'class-transformer';
 
 import { TaskEntity } from '../../tasks/entities/task.entity';
 import { CategoryEntity } from '../../categories/entities/category.entity';
@@ -58,6 +59,15 @@ export class User {
   @Column('text', { array: true, default: ['user'] })
   roles: string[];
 
+  @Column({
+    type: 'text',
+    nullable: true,
+    name: 'hashed_refresh_token',
+    select: false,
+  })
+  @Exclude()
+  hashedRefreshToken?: string | null;
+
   @ApiProperty({
     description: 'Fecha y hora de registro del usuario',
     example: '2026-09-16T12:00:00.000Z',
@@ -72,12 +82,9 @@ export class User {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
-  @ApiPropertyOptional({
-    description: 'Fecha y hora de desactivación/eliminació',
-    example: null,
-    nullable: true,
-  })
-  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  @ApiHideProperty()
+  @Exclude()
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, select: false, })
   deletedAt?: Date;
 
   @ApiHideProperty()

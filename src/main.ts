@@ -1,5 +1,5 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { CustomExceptionFilter } from './common/filters/http-exception.filter'; // Importamos el filtro
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -27,6 +27,8 @@ async function bootstrap() {
   // Activamos el filtro de excepciones global
   app.useGlobalFilters(new CustomExceptionFilter());
 
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
   // Configuración de Swagger / OpenAPI
   const config = new DocumentBuilder()
     .setTitle('Task Management API')
@@ -46,8 +48,19 @@ async function bootstrap() {
         description: 'Ingresa el token JWT sin el prefijo Bearer',
         in: 'header',
       },
-      'JWT-auth', // Nombre de la referencia para los decoradores
+      'JWT-auth',
     )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT Refresh Token',
+        description: 'Ingresa tu Refresh Token (solo para /auth/refresh)',
+        in: 'header',
+      },
+      'refresh-token',
+      )
     .build();
 
   // Generar el documento OpenAPI

@@ -9,25 +9,17 @@ import { UsersModule } from '../users/users.module';
 
 import type { SignOptions } from 'jsonwebtoken';
 import { JwtStrategy } from './strategies/jwt.strategy'; // <--- Importar
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 
 @Module({
   imports: [
     ConfigModule,
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.getOrThrow<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get<SignOptions['expiresIn']>('JWT_EXPIRES_IN', '1d'),
-        },
-      }),
-    }),
+    JwtModule.register({}), 
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, JwtStrategy, JwtModule, PassportModule],
+  providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
+  exports: [AuthService, JwtStrategy, JwtModule, PassportModule, JwtRefreshStrategy],
 })
 export class AuthModule {}

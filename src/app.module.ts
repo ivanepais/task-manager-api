@@ -28,7 +28,9 @@ import { CategoriesModule } from './categories/categories.module';
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
-        JWT_EXPIRES_IN: Joi.string().default('1d'),
+        JWT_EXPIRES_IN: Joi.string().default('15m'),
+        JWT_REFRESH_SECRET: Joi.string().required(),
+        JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
       }),
     }),
 
