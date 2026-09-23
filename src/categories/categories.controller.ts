@@ -26,7 +26,6 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 import { GetUser } from '../auth/decorators/get-user.decorator';
-import { User } from '../users/entities/user.entity';
 
 @ApiTags('Categories')
 @ApiBearerAuth('JWT-auth')
@@ -39,8 +38,8 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Obtener todas las categorías del usuario autenticado' })
   @ApiResponse({ status: 200, description: 'Lista de categorías devuelta exitosamente.', type: [CategoryEntity] })
   @ApiResponse({ status: 401, description: 'Token JWT no provisto o inválido.' })
-  async findAll(@GetUser() user: User): Promise<CategoryEntity[]> {
-    return await this.categoriesService.findAll(user.id);
+  async findAll(@GetUser('id') userId: string): Promise<CategoryEntity[]> {
+    return await this.categoriesService.findAll(userId);
   }
 
   @Get(':id')
@@ -51,9 +50,9 @@ export class CategoriesController {
   @ApiResponse({ status: 404, description: 'Categoría no encontrada o no pertenece al usuario.' })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @GetUser() user: User,
+    @GetUser('id') userId: string,
   ): Promise<CategoryEntity> {
-    return await this.categoriesService.findOne(id, user.id);
+    return await this.categoriesService.findOne(id, userId);
   }
 
   @Post()
@@ -65,9 +64,9 @@ export class CategoriesController {
   @ApiResponse({ status: 409, description: 'Ya existe una categoría con ese nombre para este usuario.' })
   async create(
     @Body() createCategoryDto: CreateCategoryDto,
-    @GetUser() user: User,
+    @GetUser('id') userId: string,
   ): Promise<CategoryEntity> {
-    return await this.categoriesService.create(createCategoryDto, user.id);
+    return await this.categoriesService.create(createCategoryDto, userId);
   }
 
   @Put(':id')
@@ -81,9 +80,9 @@ export class CategoriesController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
-    @GetUser() user: User,
+    @GetUser('id') userId: string,
   ): Promise<CategoryEntity> {
-    return await this.categoriesService.update(id, updateCategoryDto, user.id);
+    return await this.categoriesService.update(id, updateCategoryDto, userId);
   }
 
   @Delete(':id')
@@ -95,8 +94,8 @@ export class CategoriesController {
   @ApiResponse({ status: 404, description: 'Categoría no encontrada.' })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
-    @GetUser() user: User,
+    @GetUser('id') userId: string,
   ): Promise<void> {
-    await this.categoriesService.remove(id, user.id);
+    await this.categoriesService.remove(id, userId);
   }
 }

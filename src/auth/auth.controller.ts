@@ -8,7 +8,6 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, } from '@nestjs/swag
 
 import { GetUser } from './decorators/get-user.decorator';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
-import { User } from '../users/entities/user.entity';
 
 @ApiTags('Auth')
 @Controller('auth')

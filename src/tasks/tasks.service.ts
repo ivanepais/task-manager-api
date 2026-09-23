@@ -9,6 +9,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { CategoryEntity } from '../categories/entities/category.entity';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import { PaginatedTasksDto } from './dto/paginated-tasks.dto';
 
 @Injectable()
 export class TasksService {
@@ -23,7 +24,7 @@ export class TasksService {
   ) {}
 
   // tareas del usuario autenticado con sus categorias 
-  async findAll(queryDto: PaginationQueryDto, userId: string,): Promise<PaginatedResponse<TaskEntity>> {
+  async findAll(queryDto: PaginationQueryDto, userId: string,): Promise<PaginatedTasksDto> {
     const { limit = 10, page = 1, completed, search, categoryId } = queryDto;
     const skip = (page - 1) * limit;
       
@@ -87,8 +88,10 @@ export class TasksService {
     let categories: CategoryEntity[] = [];
     
     if (categoryIds && categoryIds.length > 0) {
+      const uniqueCategoryIds = [...new Set(categoryIds)];
+
       categories = await this.categoryRepository.find({
-        where: { id: In(categoryIds), userId },
+        where: { id: In(uniqueCategoryIds), userId },
       });
 
       if (categories.length !== categoryIds.length) {
@@ -114,8 +117,11 @@ export class TasksService {
 
     if (categoryIds !== undefined) {
       if (categoryIds.length > 0) {
+        
+        const uniqueCategoryIds = [...new Set(categoryIds)];
+
         const categories = await this.categoryRepository.find({
-          where: { id: In(categoryIds), userId },
+          where: { id: In(uniqueCategoryIds), userId },
         });
 
         if (categories.length !== categoryIds.length) {
@@ -136,10 +142,7 @@ export class TasksService {
   // Elimina la tarea asegurando pertenencia al usuario
   async remove(id: string, userId: string): Promise<void> {
     // Executa un UPDATE directo en SQL sin tocar relaciones ni realizar cascadas innecesarias
-    const result = await this.taskRepository.softDelete({
-      id,
-      user: { id: userId },
-    });
+    const result = await this.taskRepository.softDelete({ id, userId });
 
     // Si no afectó ninguna fila, la tarea no existía o no pertenecía a este usuario
     if (result.affected === 0) {

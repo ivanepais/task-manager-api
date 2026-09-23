@@ -27,9 +27,9 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
 import { GetUser } from '../auth/decorators/get-user.decorator';
-import { User } from '../users/entities/user.entity';
 
 import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { PaginatedTasksDto } from './dto/paginated-tasks.dto';
 
 @ApiTags('Tasks')
 @ApiBearerAuth('JWT-auth')
@@ -40,13 +40,13 @@ export class TasksController {
 
   @Get()
   @ApiOperation({ summary: 'Obtener todas las tareas con paginación y filtros dinámicos' })
-  @ApiResponse({ status: 200, type: TaskEntity, description: 'Lista paginada devuelta exitosamente.' })
+  @ApiResponse({ status: 200, type: PaginatedTasksDto, description: 'Lista paginada devuelta exitosamente.' })
   @ApiResponse({ status: 401, description: 'Token JWT no provisto o inválido.' })
   async findAll(
     @Query() paginationQueryDto: PaginationQueryDto,
-    @GetUser() user: User,
-  ) {
-    return await this.tasksService.findAll(paginationQueryDto, user.id);
+    @GetUser('id') userId: string,
+  ): Promise<PaginatedTasksDto> {
+    return await this.tasksService.findAll(paginationQueryDto, userId);
   }
 
   @Get(':id')
@@ -55,8 +55,8 @@ export class TasksController {
   @ApiResponse({ status: 200, type: TaskEntity, description: 'Tarea encontrada.' })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Tarea no encontrada o no pertenece al usuario.' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User,): Promise<TaskEntity> {
-    return await this.tasksService.findOne(id, user.id);
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @GetUser('id') userId: string,): Promise<TaskEntity> {
+    return await this.tasksService.findOne(id, userId);
   }
 
   @Post()
@@ -65,8 +65,8 @@ export class TasksController {
   @ApiResponse({ status: 201, type: TaskEntity, description: 'Tarea creada exitosamente.' })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
-  async create(@Body() createTaskDto: CreateTaskDto, @GetUser() user: User,): Promise<TaskEntity> {
-    return await this.tasksService.create(createTaskDto, user.id);
+  async create(@Body() createTaskDto: CreateTaskDto, @GetUser('id') userId: string,: Promise<TaskEntity> {
+    return await this.tasksService.create(createTaskDto, userId);
   }
 
   @Put(':id')
@@ -78,9 +78,9 @@ export class TasksController {
   @ApiResponse({ status: 404, description: 'Tarea no encontrada.' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateTaskDto: UpdateTaskDto, @GetUser() user: User,
+    @Body() updateTaskDto: UpdateTaskDto, @GetUser('id') userId: string,
   ): Promise<TaskEntity> {
-    return await this.tasksService.update(id, updateTaskDto, user.id);
+    return await this.tasksService.update(id, updateTaskDto, userId);
   }
 
   @Delete(':id')
@@ -90,8 +90,8 @@ export class TasksController {
   @ApiResponse({ status: 204, description: 'Tarea marcada como eliminada correctamente.' })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Tarea no encontrada.' })
-  async remove(@Param('id', ParseUUIDPipe) id: string, @GetUser() user: User,): Promise<void> {
-    await this.tasksService.remove(id, user.id);
+  async remove(@Param('id', ParseUUIDPipe) id: string, @GetUser('id') userId: string,: Promise<void> {
+    await this.tasksService.remove(id, userId);
   }
 
   @Patch(':id/restore')
@@ -102,8 +102,8 @@ export class TasksController {
   @ApiResponse({ status: 404, description: 'Tarea no encontrada.' })
   async restore(
     @Param('id', ParseUUIDPipe) id: string,
-    @GetUser() user: User,
+    @GetUser('id') userId: string,
   ): Promise<TaskEntity> {
-    return await this.tasksService.restore(id, user.id);
+    return await this.tasksService.restore(id, userId);
   }
 }

@@ -12,6 +12,15 @@ import { UsersService } from '../users/users.service';
 import { RegisterUserDto, LoginUserDto } from '../users/dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 
+export interface Tokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface AuthResponse extends Tokens {
+  user: Omit<UserEntity, 'password' | 'hashedRefreshToken'>;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -23,7 +32,7 @@ export class AuthService {
   ) {}
 
   // Registra un nuevo usuario y retorna sus datos junto con el Token JWT.
-  async register(registerUserDto: RegisterUserDto) {
+  async register(registerUserDto: RegisterUserDto): Promise<AuthResponse> {
     const user = await this.usersService.create(registerUserDto);
     const tokens = await this.getTokens(user.id, user.email);
     await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
@@ -32,7 +41,7 @@ export class AuthService {
   }
 
   // Autentica credenciales (email y contraseña) y retorna el Token JWT.
-  async login(loginUserDto: LoginUserDto) {
+  async login(loginUserDto: LoginUserDto): Promise<AuthResponse> {
     const { email, password } = loginUserDto;
 
     // 1. Buscar usuario incluyendo el hash de la contraseña
@@ -71,11 +80,15 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(userId: string, refreshToken: string) {
+  async refreshTokens(userId: string, refreshToken: string): Promise<Tokens> {
     const user = await this.usersService.findByIdWithRefreshToken(userId);
 
     if (!user || !user.hashedRefreshToken) {
       throw new ForbiddenException('Acceso denegado: Sesión no encontrada');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('El usuario se encuentra inactivo');
     }
 
     const rtMatches = await bcrypt.compare(refreshToken, user.hashedRefreshToken);
@@ -91,13 +104,13 @@ export class AuthService {
   }
 
   // 4. Logout (Revocación remota)
-  async logout(userId: string) {
+  async logout(userId: string): Promise<void> {
     await this.usersService.updateHashedRefreshToken(userId, null);
     return { message: 'Sesión cerrada exitosamente' };
   }
 
   // Helper: Generar par de tokens (AT + RT)
-  private async getTokens(userId: string, email: string) {
+  private async getTokens(userId: string, email: string): Promise<Tokens> {
     const jwtPayload: JwtPayload = { id: userId, email };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -118,7 +131,7 @@ export class AuthService {
   }
 
   // Helper: Guardar el RT hasheado en la base de datos
-  private async updateHashedRefreshToken(userId: string, refreshToken: string) {
+  private async updateHashedRefreshToken(userId: string, refreshToken: string): Promise<void> {
     const hash = await bcrypt.hash(refreshToken, 10);
     await this.usersService.updateHashedRefreshToken(userId, hash);
   }

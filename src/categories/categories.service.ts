@@ -65,7 +65,8 @@ export class CategoriesService {
       this.categoryRepository.merge(category, updateCategoryDto);
       return await this.categoryRepository.save(category);
     } catch (error) {
-      this.handleDBExceptions(error, updateCategoryDto.name);
+      const categoryName = updateCategoryDto.name || category.name;
+      this.handleDBExceptions(error, categoryName);
     }
   }
 
@@ -80,16 +81,27 @@ export class CategoriesService {
 
   // Manejador centralizado para capturar errores de PostgreSQL
   private handleDBExceptions(error: any, categoryName?: string): never {
-    if (error.code === '23505') {
+    // Verificamos si el error es un objeto que contiene la propiedad 'code' (típico de TypeORM / Postgres)
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code: string }).code === '23505'
+    ) {
       throw new ConflictException(
         `Ya existe una categoría con el nombre "${categoryName}".`,
       );
     }
 
-    this.logger.error(`Error de base de datos: ${error.message}`, error.stack);
+    // Aseguramos acceso seguro a 'message' y 'stack' mediante un cast controlado o verificación
+    const err = error as { message?: string; stack?: string };
+    this.logger.error(
+      `Error de base de datos: ${err.message || 'Error desconocido'}`,
+      err.stack,
+    );
+
     throw new InternalServerErrorException(
       'Error inesperado al procesar la operación de categoría.',
     );
   }
-
 }
