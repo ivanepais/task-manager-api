@@ -1,4 +1,9 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch(HttpException) // Indica qué tipo de excepciones va a capturar este filtro
@@ -17,7 +22,10 @@ export class CustomExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
-      error: typeof exceptionResponse === 'object' ? exceptionResponse : { message: exceptionResponse },
+      error:
+        typeof exceptionResponse === 'object'
+          ? exceptionResponse
+          : { message: exceptionResponse },
     });
   }
 }

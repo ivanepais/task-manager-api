@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MaxLength, IsOptional, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  IsOptional,
+  Matches,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateCategoryDto {
@@ -11,7 +17,9 @@ export class CreateCategoryDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   name: string;
 
   @ApiPropertyOptional({
@@ -23,6 +31,8 @@ export class CreateCategoryDto {
   @Matches(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
     message: 'El color debe ser un código Hexadecimal válido (ej. #FF5733)',
   })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
   color?: string;
 }

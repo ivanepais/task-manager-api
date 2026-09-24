@@ -18,9 +18,9 @@ async function bootstrap() {
   // Activamos la validación global
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,            // 1. Elimina campos que no estén en el DTO (Saneamiento)
+      whitelist: true, // 1. Elimina campos que no estén en el DTO (Saneamiento)
       forbidNonWhitelisted: true, // 2. Lanza un error si el cliente envía campos extra no definidos
-      transform: true,            // 3. Transforma tipos automáticamente (ej. '1' a 1)
+      transform: true, // 3. Transforma tipos automáticamente (ej. '1' a 1)
     }),
   );
 
@@ -60,7 +60,7 @@ async function bootstrap() {
         in: 'header',
       },
       'refresh-token',
-      )
+    )
     .build();
 
   // Generar el documento OpenAPI
@@ -76,6 +76,8 @@ async function bootstrap() {
 
   await app.listen(port); // Usar la variable 'port' de ConfigService
   console.log(`🚀 Aplicación corriendo en el puerto ${port}`);
-  console.log(`📄 Documentación Swagger disponible en: http://localhost:${port}/api/docs`);
+  console.log(
+    `📄 Documentación Swagger disponible en: http://localhost:${port}/api/docs`,
+  );
 }
 bootstrap();

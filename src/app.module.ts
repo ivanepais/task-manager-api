@@ -48,7 +48,7 @@ import { CategoriesModule } from './categories/categories.module';
         // Carga automáticamente entidades registradas en módulos hijos
         autoLoadEntities: true,
         // Sincroniza automáticamente cambios de entidades con la BD en desarrollo.
-        // 
+        //
         synchronize: false,
         logging: ['query', 'error'],
       }),

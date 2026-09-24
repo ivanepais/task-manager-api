@@ -4,9 +4,13 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 
+interface RequestWithUser extends Request {
+  user?: Record<string, unknown>;
+}
+
 export const GetUser = createParamDecorator(
-  (data: string, ctx: ExecutionContext) => {
-    const req = ctx.switchToHttp().getRequest();
+  (data: string | undefined, ctx: ExecutionContext): unknown => {
+    const req = ctx.switchToHttp().getRequest<RequestWithUser>();
     const user = req.user;
 
     if (!user) {

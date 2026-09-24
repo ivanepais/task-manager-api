@@ -27,12 +27,11 @@ export class UsersService {
     return email?.toLowerCase().trim() ?? '';
   }
 
-  // Registra un nuevo usuario en la base de datos con contraseña encriptada.
   async create(registerUserDto: RegisterUserDto): Promise<User> {
     const email = this.normalizeEmail(registerUserDto.email);
     const { password, userName } = registerUserDto;
 
-    // 1. Verificación previa de existencia (Validación de Negocio)
+    // Verificación previa de existencia (Validación de Negocio)
     const existingUser = await this.userRepository.findOne({
       where: { email },
     });
@@ -42,10 +41,10 @@ export class UsersService {
     }
 
     try {
-      // 2. Generar hash de la contraseña (salt = 10)
+      // Generar hash de la contraseña (salt = 10)
       const hashedPassword = await bcrypt.hash(password, this.SALT_ROUNDS);
 
-      // 3. Crear e instanciar
+      // Crear e instanciar
       const user = this.userRepository.create({
         email,
         userName,
@@ -54,19 +53,28 @@ export class UsersService {
 
       await this.userRepository.save(user);
 
-      // 4. Sanitización de salida (remover hash del retorno)
+      // Sanitización de salida (remover hash del retorno)
       delete (user as Partial<User>).password;
       return user;
-    } catch (error) {
+    } catch (error: unknown) {
       // Tipado seguro de la excepción de Postgres
-      const pgError = error as { code?: string; message?: string; stack?: string };
+      const pgError = error as {
+        code?: string;
+        message?: string;
+        stack?: string;
+      };
 
       // Capturar violaciones de restricción única de Postgres (Race conditions)
       if (pgError.code === '23505') {
         throw new ConflictException('El correo electrónico ya está registrado');
       }
 
-      this.logger.error(`Error al crear usuario: ${error.message}`, error.stack);
+      // Usamos pgError con fallback por si message fuera undefined
+      this.logger.error(
+        `Error al crear usuario: ${pgError.message ?? 'Error desconocido'}`,
+        pgError.stack,
+      );
+
       throw new InternalServerErrorException(
         'Ocurrió un error inesperado al registrar el usuario',
       );
@@ -74,18 +82,16 @@ export class UsersService {
   }
 
   // Busca un usuario por email incluyendo la contraseña (uso exclusivo de Auth).
-  // Mantiene normalización defensiva al recibir un argumento primitivo.
   async findByEmailWithPassword(email: string): Promise<User | null> {
     const normalizedEmail = this.normalizeEmail(email);
-    
+
     return this.userRepository
       .createQueryBuilder('user')
       .where('user.email = :email', { email: normalizedEmail })
       .addSelect('user.password')
       .getOne();
   }
-  
-  // Busca un usuario activo por su ID (validación de sesiones/guards).
+
   async findById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
 
@@ -112,7 +118,10 @@ export class UsersService {
   }
 
   // Gestión interna de sesiones/autenticación: Modifica directamente la columna hashed_refresh_token sin pasar por DTOs públicos.
-  async updateHashedRefreshToken(userId: string, hashedRefreshToken: string | null): Promise<void> {
+  async updateHashedRefreshToken(
+    userId: string,
+    hashedRefreshToken: string | null,
+  ): Promise<void> {
     const result = await this.userRepository.update(userId, {
       hashedRefreshToken,
     });

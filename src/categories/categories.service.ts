@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, InternalServerErrorException, Logger, } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -15,7 +21,6 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<CategoryEntity>,
   ) {}
 
-  // 1. Obtiene todas las categorías pertenecientes al usuario autenticado
   async findAll(userId: string): Promise<CategoryEntity[]> {
     return await this.categoryRepository.find({
       where: { userId },
@@ -23,7 +28,6 @@ export class CategoriesService {
     });
   }
 
-  // 2. Busca una categoría por ID asegurando pertenencia al usuario
   async findOne(id: string, userId: string): Promise<CategoryEntity> {
     const category = await this.categoryRepository.findOne({
       where: { id, userId },
@@ -36,7 +40,6 @@ export class CategoriesService {
     return category;
   }
 
-  // 3. Registra una nueva categoría para el usuario
   async create(
     createCategoryDto: CreateCategoryDto,
     userId: string,
@@ -53,7 +56,6 @@ export class CategoriesService {
     }
   }
 
-  // 4. Actualiza los datos de una categoría previa validación de propiedad
   async update(
     id: string,
     updateCategoryDto: UpdateCategoryDto,
@@ -70,7 +72,6 @@ export class CategoriesService {
     }
   }
 
-  // 5. Elimina la categoría del usuario
   async remove(id: string, userId: string): Promise<void> {
     const result = await this.categoryRepository.delete({ id, userId });
 
@@ -79,7 +80,7 @@ export class CategoriesService {
     }
   }
 
-  // Manejador centralizado para capturar errores de PostgreSQL
+  // Capturar errores de PostgreSQL
   private handleDBExceptions(error: any, categoryName?: string): never {
     // Verificamos si el error es un objeto que contiene la propiedad 'code' (típico de TypeORM / Postgres)
     if (

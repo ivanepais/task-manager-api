@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -7,7 +7,6 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 
-import type { SignOptions } from 'jsonwebtoken';
 import { JwtStrategy } from './strategies/jwt.strategy'; // <--- Importar
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 
@@ -16,10 +15,16 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
     ConfigModule,
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({}), 
+    JwtModule.register({}),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
-  exports: [AuthService, JwtStrategy, JwtModule, PassportModule, JwtRefreshStrategy],
+  exports: [
+    AuthService,
+    JwtStrategy,
+    JwtModule,
+    PassportModule,
+    JwtRefreshStrategy,
+  ],
 })
 export class AuthModule {}

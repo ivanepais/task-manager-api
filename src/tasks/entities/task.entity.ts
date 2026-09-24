@@ -1,6 +1,6 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
@@ -10,8 +10,14 @@ import {
   JoinTable,
   JoinColumn,
   Index,
+  BeforeInsert,
 } from 'typeorm';
-import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiHideProperty,
+} from '@nestjs/swagger';
+import { v7 as uuidv7 } from 'uuid';
 import { Exclude } from 'class-transformer';
 
 import { User } from '../../users/entities/user.entity';
@@ -21,11 +27,18 @@ import { CategoryEntity } from '../../categories/entities/category.entity';
 @Index(['userId', 'completed'])
 export class TaskEntity {
   @ApiProperty({
-    description: 'Identificador único UUID v4 de la tarea',
-    example: '7f61495f-64c8-42ad-aea8-6b6603984c70',
+    description: 'Identificador único UUID v7 de la tarea',
+    example: '018f3ab1-2c3d-7e4f-8a9b-0c1d2e3f4a5b',
   })
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryColumn('uuid')
+  id: string = uuidv7();
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv7();
+    }
+  }
 
   @ApiProperty({
     description: 'Título descriptivo de la tarea',
@@ -66,7 +79,12 @@ export class TaskEntity {
 
   @ApiHideProperty()
   @Exclude()
-  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, select: false, })
+  @DeleteDateColumn({
+    name: 'deleted_at',
+    type: 'timestamptz',
+    nullable: true,
+    select: false,
+  })
   deletedAt?: Date;
 
   // Clave foránea explícita para evitar JOINs pesados en lecturas
@@ -74,9 +92,9 @@ export class TaskEntity {
   userId: string;
 
   @ApiHideProperty()
-  @ManyToOne(() => User, (user) => user.tasks, { 
+  @ManyToOne(() => User, (user) => user.tasks, {
     onDelete: 'CASCADE', // Borra las tareas si se elimina el usuario en la BD
-    eager: false,        // Evita JOINs automáticos no deseados (por defecto)
+    eager: false, // Evita JOINs automáticos no deseados (por defecto)
   })
   @JoinColumn({ name: 'user_id' })
   user: User;

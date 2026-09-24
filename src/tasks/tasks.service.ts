@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 
@@ -8,31 +12,31 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 
 import { CategoryEntity } from '../categories/entities/category.entity';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
-import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { PaginatedTasksDto } from './dto/paginated-tasks.dto';
 
 @Injectable()
 export class TasksService {
-
   constructor(
     // 1. Inyección del repositorio de TypeORM para la tabla 'tasks'
     @InjectRepository(TaskEntity)
     private readonly taskRepository: Repository<TaskEntity>,
-    
+
     @InjectRepository(CategoryEntity)
     private readonly categoryRepository: Repository<CategoryEntity>,
   ) {}
 
-  // tareas del usuario autenticado con sus categorias 
-  async findAll(queryDto: PaginationQueryDto, userId: string,): Promise<PaginatedTasksDto> {
+  async findAll(
+    queryDto: PaginationQueryDto,
+    userId: string,
+  ): Promise<PaginatedTasksDto> {
     const { limit = 10, page = 1, completed, search, categoryId } = queryDto;
     const skip = (page - 1) * limit;
-      
+
     const query = this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.categories', 'category')
       .where('task.userId = :userId', { userId });
-    
+
     // Filtro por estado completed
     if (completed !== undefined) {
       query.andWhere('task.completed = :completed', { completed });
@@ -68,7 +72,6 @@ export class TasksService {
     };
   }
 
-  // Busca una tarea por ID filtrando que pertenezca al usuario
   async findOne(id: string, userId: string): Promise<TaskEntity> {
     const task = await this.taskRepository.findOne({
       where: { id, userId },
@@ -83,10 +86,13 @@ export class TasksService {
   }
 
   // Crea la tarea y asocia las categorías que pertenecen al usuario
-  async create(createTaskDto: CreateTaskDto, userId: string): Promise<TaskEntity> {
+  async create(
+    createTaskDto: CreateTaskDto,
+    userId: string,
+  ): Promise<TaskEntity> {
     const { categoryIds, ...taskData } = createTaskDto;
     let categories: CategoryEntity[] = [];
-    
+
     if (categoryIds && categoryIds.length > 0) {
       const uniqueCategoryIds = [...new Set(categoryIds)];
 
@@ -100,7 +106,7 @@ export class TasksService {
         );
       }
     }
-    
+
     const newTask = this.taskRepository.create({
       ...taskData,
       userId,
@@ -111,13 +117,16 @@ export class TasksService {
   }
 
   // Actualiza datos y sincroniza las categorías si se pasan categoryIds
-  async update(id: string, updateTaskDto: UpdateTaskDto, userId: string,): Promise<TaskEntity> {
+  async update(
+    id: string,
+    updateTaskDto: UpdateTaskDto,
+    userId: string,
+  ): Promise<TaskEntity> {
     const { categoryIds, ...taskData } = updateTaskDto;
     const task = await this.findOne(id, userId);
 
     if (categoryIds !== undefined) {
       if (categoryIds.length > 0) {
-        
         const uniqueCategoryIds = [...new Set(categoryIds)];
 
         const categories = await this.categoryRepository.find({

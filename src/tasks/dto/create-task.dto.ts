@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, IsBoolean, IsArray, IsUUID, } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsUUID,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateTaskDto {
@@ -13,7 +22,9 @@ export class CreateTaskDto {
   @IsNotEmpty({ message: 'El título no puede estar vacío.' })
   @MinLength(3, { message: 'El título debe tener al menos 3 caracteres.' })
   @MaxLength(100, { message: 'El título no puede superar los 100 caracteres.' })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   readonly title: string;
 
   @ApiProperty({
@@ -23,8 +34,12 @@ export class CreateTaskDto {
   })
   @IsString({ message: 'La descripción debe ser una cadena de texto.' })
   @IsNotEmpty({ message: 'La descripción no puede estar vacía.' })
-  @MaxLength(500, { message: 'La descripción no puede superar los 500 caracteres.' })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @MaxLength(500, {
+    message: 'La descripción no puede superar los 500 caracteres.',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   readonly description: string;
 
   @ApiPropertyOptional({
@@ -37,16 +52,19 @@ export class CreateTaskDto {
   completed?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Arreglo de UUIDs v4 pertenecientes a las categorías asociadas',
-    example: ['8570f87c-1840-48ae-829b-d887a40d00cb'],
+    description:
+      'Arreglo de UUIDs v7 pertenecientes a las categorías asociadas',
+    example: ['018f3ab1-2c3d-7e4f-8a9b-0c1d2e3f4a5b'],
     type: [String],
   })
   @IsArray({ message: 'categoryIds debe ser un arreglo de identificadores.' })
-  @IsUUID('4', { 
-    each: true, 
-    message: 'Cada ID de categoría debe ser un UUID v4 válido.',
+  @IsUUID('7', {
+    each: true,
+    message: 'Cada ID de categoría debe ser un UUID v7 válido.',
   })
   @IsOptional()
-  @Transform(({ value }) => (Array.isArray(value) ? [...new Set(value)] : value))
+  @Transform(({ value }: { value: unknown }) =>
+    Array.isArray(value) ? [...new Set(value)] : value,
+  )
   categoryIds?: string[];
 }

@@ -1,13 +1,15 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  BeforeInsert,
 } from 'typeorm';
-import { ApiProperty, ApiPropertyOptional, ApiHideProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
+import { v7 as uuidv7 } from 'uuid';
 import { Exclude } from 'class-transformer';
 
 import { TaskEntity } from '../../tasks/entities/task.entity';
@@ -16,11 +18,18 @@ import { CategoryEntity } from '../../categories/entities/category.entity';
 @Entity('users')
 export class User {
   @ApiProperty({
-    description: 'Identificador único UUID v4 del usuario',
-    example: 'd3b07384-d113-44a6-a719-e6479a283f96',
+    description: 'Identificador único UUID v7 del usuario',
+    example: '018f3a9e-1a2b-7c3d-8e4f-5a6b7c8d9e0f',
   })
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('uuid')
   id: string;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv7();
+    }
+  }
 
   @ApiProperty({
     description: 'Correo electrónico único del usuario',
@@ -84,7 +93,12 @@ export class User {
 
   @ApiHideProperty()
   @Exclude()
-  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true, select: false, })
+  @DeleteDateColumn({
+    name: 'deleted_at',
+    type: 'timestamptz',
+    nullable: true,
+    select: false,
+  })
   deletedAt?: Date;
 
   @ApiHideProperty()

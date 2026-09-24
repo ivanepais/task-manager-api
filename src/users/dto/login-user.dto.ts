@@ -7,7 +7,9 @@ export class LoginUserDto {
     description: 'Correo electrónico del usuario registrado',
     example: 'pepe1@ejemplo.com',
   })
-  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsNotEmpty({ message: 'El correo electrónico es obligatorio' })
   @IsEmail({}, { message: 'El correo electrónico no tiene un formato válido' })
   email: string;
