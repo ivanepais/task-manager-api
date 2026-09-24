@@ -134,8 +134,8 @@ export class CategoriesController {
   @ApiOperation({ summary: 'Eliminar una categoría por su UUID' })
   @ApiParam({
     name: 'id',
-    description: 'UUID v4 de la categoría',
-    example: '8570f87c-1840-48ae-829b-d887a40d00cb',
+    description: 'UUID v7 de la categoría',
+    example: '018f3ab1-2c3d-7e4f-8a9b-0c1d2e3f4a5b',
   })
   @ApiResponse({
     status: 204,

@@ -23,6 +23,7 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { AuthResponseDto, TokensDto } from './dto/auth-response.dto';
 
 @ApiTags('Auth')
+@ApiBearerAuth('JWT-auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
