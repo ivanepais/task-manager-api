@@ -57,5 +57,9 @@ export class RegisterUserDto {
   @MaxLength(30, {
     message: 'El nombre de usuario no puede superar los 30 caracteres',
   })
+  @Matches(/^[A-Za-z0-9_]+$/, {
+    message:
+      'El nombre de usuario solo puede contener letras, números y guion bajo',
+  })
   userName: string;
 }

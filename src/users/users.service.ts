@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 
 import { User } from './entities/user.entity';
 import { RegisterUserDto } from './dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -22,54 +23,90 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  // Helper privado para garantizar normalización única e inalterable en todo el servicio
   private normalizeEmail(email: string): string {
     return email?.toLowerCase().trim() ?? '';
   }
 
-  async create(registerUserDto: RegisterUserDto): Promise<User> {
+  private toResponseDto(user: User): UserResponseDto {
+    return {
+      id: user.id,
+      email: user.email,
+      userName: user.userName,
+      createdAt: user.createdAt,
+    };
+  }
+
+  async create(registerUserDto: RegisterUserDto): Promise<UserResponseDto> {
     const email = this.normalizeEmail(registerUserDto.email);
     const { password, userName } = registerUserDto;
 
-    // Verificación previa de existencia (Validación de Negocio)
-    const existingUser = await this.userRepository.findOne({
+    const existingUserByEmail = await this.userRepository.findOne({
       where: { email },
     });
 
-    if (existingUser) {
-      throw new ConflictException('El correo electrónico ya está registrado');
+    if (existingUserByEmail) {
+      throw new ConflictException(
+        'El correo electrónico ya está registrado',
+      );
+    }
+
+    const existingUserByUserName = await this.userRepository.findOne({
+      where: { userName },
+    });
+
+    if (existingUserByUserName) {
+      throw new ConflictException(
+        'El nombre de usuario ya está registrado',
+      );
     }
 
     try {
-      // Generar hash de la contraseña (salt = 10)
       const hashedPassword = await bcrypt.hash(password, this.SALT_ROUNDS);
 
-      // Crear e instanciar
       const user = this.userRepository.create({
         email,
         userName,
         password: hashedPassword,
       });
 
-      await this.userRepository.save(user);
+      const savedUser = await this.userRepository.save(user);
 
-      // Sanitización de salida (remover hash del retorno)
-      delete (user as Partial<User>).password;
-      return user;
+      return this.toResponseDto(savedUser);
     } catch (error: unknown) {
-      // Tipado seguro de la excepción de Postgres
+
       const pgError = error as {
-        code?: string;
         message?: string;
         stack?: string;
+        driverError?: {
+          code?: string;
+          constraint?: string;
+        };
       };
 
-      // Capturar violaciones de restricción única de Postgres (Race conditions)
-      if (pgError.code === '23505') {
-        throw new ConflictException('El correo electrónico ya está registrado');
+      if (pgError.driverError?.code === '23505') {
+        const constraint = pgError.driverError.constraint;
+      
+        if (constraint === 'users_email_unique') {
+          throw new ConflictException(
+            'El correo electrónico ya está registrado',
+          );
+        }
+
+        if (constraint === 'users_username_unique') {
+          throw new ConflictException(
+            'El nombre de usuario ya está registrado',
+          );
+        }
+
+        this.logger.error(
+          `Violación UNIQUE inesperada. Constraint: ${constraint ?? 'desconocido'}`,
+        );
+
+        throw new InternalServerErrorException(
+          'Ocurrió un error inesperado al registrar el usuario',
+        );
       }
 
-      // Usamos pgError con fallback por si message fuera undefined
       this.logger.error(
         `Error al crear usuario: ${pgError.message ?? 'Error desconocido'}`,
         pgError.stack,
@@ -81,7 +118,6 @@ export class UsersService {
     }
   }
 
-  // Busca un usuario por email incluyendo la contraseña (uso exclusivo de Auth).
   async findByEmailWithPassword(email: string): Promise<User | null> {
     const normalizedEmail = this.normalizeEmail(email);
 
@@ -102,7 +138,6 @@ export class UsersService {
     return user;
   }
 
-  // Busca un usuario por ID incluyendo la columna hashedRefreshToken (Uso exclusivo de Auth)
   async findByIdWithRefreshToken(id: string): Promise<User> {
     const user = await this.userRepository
       .createQueryBuilder('user')
@@ -117,7 +152,6 @@ export class UsersService {
     return user;
   }
 
-  // Gestión interna de sesiones/autenticación: Modifica directamente la columna hashed_refresh_token sin pasar por DTOs públicos.
   async updateHashedRefreshToken(
     userId: string,
     hashedRefreshToken: string | null,

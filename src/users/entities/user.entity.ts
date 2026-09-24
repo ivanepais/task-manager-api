@@ -25,7 +25,7 @@ export class User {
   id: string;
 
   @BeforeInsert()
-  generateId() {
+  generateId(): void {
     if (!this.id) {
       this.id = uuidv7();
     }
@@ -35,8 +35,8 @@ export class User {
     description: 'Correo electrónico único del usuario',
     example: 'pepe@example.com',
   })
+  @Index('users_email_unique', { unique: true })
   @Column({
-    unique: true,
     length: 255,
   })
   email: string;
@@ -48,8 +48,10 @@ export class User {
   @ApiProperty({
     description: 'Nombre de usuario',
     example: 'Pepe',
+    unique: true,
   })
-  @Column({ name: 'user_name', length: 100 })
+  @Index('users_username_unique', { unique: true })
+  @Column({ length: 30 })
   userName: string;
 
   @ApiProperty({
@@ -59,14 +61,6 @@ export class User {
   })
   @Column({ default: true, name: 'is_active' })
   isActive: boolean;
-
-  @ApiProperty({
-    description: 'Roles asignados al usuario en el sistema',
-    example: ['user'],
-    type: [String],
-  })
-  @Column('text', { array: true, default: ['user'] })
-  roles: string[];
 
   @Column({
     type: 'text',
@@ -99,7 +93,7 @@ export class User {
     nullable: true,
     select: false,
   })
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 
   @ApiHideProperty()
   @OneToMany(() => TaskEntity, (task) => task.user)
