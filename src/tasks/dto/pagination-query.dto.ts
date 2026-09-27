@@ -7,6 +7,7 @@ import {
   IsBoolean,
   IsString,
   IsUUID,
+  MaxLength,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
@@ -54,9 +55,18 @@ export class PaginationQueryDto {
   })
   @IsOptional()
   @IsString()
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    const normalized = value.trim();
+
+    return normalized === '' ? undefined : normalized;
+  })
+  @MaxLength(100, {
+    message: 'El parámetro search no puede superar los 100 caracteres.',
+  })
   search?: string;
 
   @ApiPropertyOptional({

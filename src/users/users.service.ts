@@ -23,19 +23,6 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  private normalizeEmail(email: string): string {
-    return email?.toLowerCase().trim() ?? '';
-  }
-
-  private toResponseDto(user: User): UserResponseDto {
-    return {
-      id: user.id,
-      email: user.email,
-      userName: user.userName,
-      createdAt: user.createdAt,
-    };
-  }
-
   async create(registerUserDto: RegisterUserDto): Promise<UserResponseDto> {
     const email = this.normalizeEmail(registerUserDto.email);
     const { password, userName } = registerUserDto;
@@ -45,9 +32,7 @@ export class UsersService {
     });
 
     if (existingUserByEmail) {
-      throw new ConflictException(
-        'El correo electrónico ya está registrado',
-      );
+      throw new ConflictException('El correo electrónico ya está registrado');
     }
 
     const existingUserByUserName = await this.userRepository.findOne({
@@ -55,66 +40,23 @@ export class UsersService {
     });
 
     if (existingUserByUserName) {
-      throw new ConflictException(
-        'El nombre de usuario ya está registrado',
-      );
+      throw new ConflictException('El nombre de usuario ya está registrado');
     }
 
+    const hashedPassword = await bcrypt.hash(password, this.SALT_ROUNDS);
+
+    const user = this.userRepository.create({
+      email,
+      userName,
+      password: hashedPassword,
+    });
+
     try {
-      const hashedPassword = await bcrypt.hash(password, this.SALT_ROUNDS);
-
-      const user = this.userRepository.create({
-        email,
-        userName,
-        password: hashedPassword,
-      });
-
       const savedUser = await this.userRepository.save(user);
 
       return this.toResponseDto(savedUser);
     } catch (error: unknown) {
-
-      const pgError = error as {
-        message?: string;
-        stack?: string;
-        driverError?: {
-          code?: string;
-          constraint?: string;
-        };
-      };
-
-      if (pgError.driverError?.code === '23505') {
-        const constraint = pgError.driverError.constraint;
-      
-        if (constraint === 'users_email_unique') {
-          throw new ConflictException(
-            'El correo electrónico ya está registrado',
-          );
-        }
-
-        if (constraint === 'users_username_unique') {
-          throw new ConflictException(
-            'El nombre de usuario ya está registrado',
-          );
-        }
-
-        this.logger.error(
-          `Violación UNIQUE inesperada. Constraint: ${constraint ?? 'desconocido'}`,
-        );
-
-        throw new InternalServerErrorException(
-          'Ocurrió un error inesperado al registrar el usuario',
-        );
-      }
-
-      this.logger.error(
-        `Error al crear usuario: ${pgError.message ?? 'Error desconocido'}`,
-        pgError.stack,
-      );
-
-      throw new InternalServerErrorException(
-        'Ocurrió un error inesperado al registrar el usuario',
-      );
+      this.handleDBExceptions(error);
     }
   }
 
@@ -138,6 +80,12 @@ export class UsersService {
     return user;
   }
 
+  async findByIdOrNull(id: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id },
+    });
+  }
+
   async findByIdWithRefreshToken(id: string): Promise<User> {
     const user = await this.userRepository
       .createQueryBuilder('user')
@@ -152,6 +100,14 @@ export class UsersService {
     return user;
   }
 
+  async findByIdWithRefreshTokenOrNull(id: string): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id = :id', { id })
+      .addSelect('user.hashedRefreshToken')
+      .getOne();
+  }
+
   async updateHashedRefreshToken(
     userId: string,
     hashedRefreshToken: string | null,
@@ -163,5 +119,60 @@ export class UsersService {
     if (result.affected === 0) {
       throw new NotFoundException(`Usuario con ID ${userId} no encontrado`);
     }
+  }
+
+  private normalizeEmail(email: string): string {
+    return email?.toLowerCase().trim() ?? '';
+  }
+
+  private toResponseDto(user: User): UserResponseDto {
+    return {
+      id: user.id,
+      email: user.email,
+      userName: user.userName,
+      createdAt: user.createdAt,
+    };
+  }
+
+  private handleDBExceptions(error: unknown): never {
+    const pgError = error as {
+      message?: string;
+      stack?: string;
+      driverError?: {
+        code?: string;
+        constraint?: string;
+      };
+    };
+
+    if (pgError.driverError?.code === '23505') {
+      const constraint = pgError.driverError.constraint;
+
+      if (constraint === 'users_email_unique') {
+        throw new ConflictException('El correo electrónico ya está registrado');
+      }
+
+      if (constraint === 'users_username_unique') {
+        throw new ConflictException('El nombre de usuario ya está registrado');
+      }
+
+      this.logger.error(
+        `Violación UNIQUE inesperada. Constraint: ${
+          constraint ?? 'desconocido'
+        }`,
+      );
+
+      throw new InternalServerErrorException(
+        'Ocurrió un error inesperado al registrar el usuario',
+      );
+    }
+
+    this.logger.error(
+      `Error de base de datos: ${pgError.message ?? 'Error desconocido'}`,
+      pgError.stack,
+    );
+
+    throw new InternalServerErrorException(
+      'Ocurrió un error inesperado al registrar el usuario',
+    );
   }
 }

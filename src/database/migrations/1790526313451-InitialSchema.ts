@@ -1,12 +1,14 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class InitialSchema1790268368742 implements MigrationInterface {
-    name = 'InitialSchema1790268368742'
+export class InitialSchema1790526313451 implements MigrationInterface {
+    name = 'InitialSchema1790526313451'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "tasks" ("id" uuid NOT NULL, "title" character varying(100) NOT NULL, "description" text, "completed" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, "user_id" uuid NOT NULL, CONSTRAINT "PK_8d12ff38fcc62aaba2cab748772" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE INDEX "IDX_afe2dcb24f4f3aa1290ae5a900" ON "tasks"  ("user_id", "completed") `);
-        await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL, "email" character varying(255) NOT NULL, "password" character varying NOT NULL, "user_name" character varying(100) NOT NULL, "is_active" boolean NOT NULL DEFAULT true, "roles" text array NOT NULL DEFAULT '{user}', "hashed_refresh_token" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "tasks_user_completed_idx" ON "tasks"  ("user_id", "completed") `);
+        await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL, "email" character varying(255) NOT NULL, "password" character varying NOT NULL, "userName" character varying(30) NOT NULL, "is_active" boolean NOT NULL DEFAULT true, "hashed_refresh_token" text, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP WITH TIME ZONE, CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE UNIQUE INDEX "users_email_unique" ON "users"  ("email") `);
+        await queryRunner.query(`CREATE UNIQUE INDEX "users_username_unique" ON "users"  ("userName") `);
         await queryRunner.query(`CREATE TABLE "categories" ("id" uuid NOT NULL, "name" character varying(50) NOT NULL, "color" character varying(7) NOT NULL DEFAULT '#4A90E2', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "user_id" uuid NOT NULL, CONSTRAINT "UQ_48f0690983e955b500b4a3e0293" UNIQUE ("name", "user_id"), CONSTRAINT "PK_24dbc6126a28ff948da33e97d3b" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_2296b7fe012d95646fa41921c8" ON "categories"  ("user_id") `);
         await queryRunner.query(`CREATE TABLE "task_categories" ("task_id" uuid NOT NULL, "category_id" uuid NOT NULL, CONSTRAINT "PK_6102b120e4b7cace4607e857094" PRIMARY KEY ("task_id", "category_id"))`);
@@ -28,8 +30,10 @@ export class InitialSchema1790268368742 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "task_categories"`);
         await queryRunner.query(`DROP INDEX "public"."IDX_2296b7fe012d95646fa41921c8"`);
         await queryRunner.query(`DROP TABLE "categories"`);
+        await queryRunner.query(`DROP INDEX "public"."users_username_unique"`);
+        await queryRunner.query(`DROP INDEX "public"."users_email_unique"`);
         await queryRunner.query(`DROP TABLE "users"`);
-        await queryRunner.query(`DROP INDEX "public"."IDX_afe2dcb24f4f3aa1290ae5a900"`);
+        await queryRunner.query(`DROP INDEX "public"."tasks_user_completed_idx"`);
         await queryRunner.query(`DROP TABLE "tasks"`);
     }
 

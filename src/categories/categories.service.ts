@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { CategoryEntity } from './entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { CategoryResponseDto } from './dto/category-response.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -21,36 +22,32 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<CategoryEntity>,
   ) {}
 
-  async findAll(userId: string): Promise<CategoryEntity[]> {
-    return await this.categoryRepository.find({
+  async findAll(userId: string): Promise<CategoryResponseDto[]> {
+    const categories = await this.categoryRepository.find({
       where: { userId },
       order: { name: 'ASC' },
     });
+    return categories.map((category) => this.toResponseDto(category));
   }
 
-  async findOne(id: string, userId: string): Promise<CategoryEntity> {
-    const category = await this.categoryRepository.findOne({
-      where: { id, userId },
-    });
+  async findOne(id: string, userId: string): Promise<CategoryResponseDto> {
+    const category = await this.findOneEntity(id, userId);
 
-    if (!category) {
-      throw new NotFoundException(`La categoría con ID "${id}" no existe.`);
-    }
-
-    return category;
+    return this.toResponseDto(category);
   }
 
   async create(
     createCategoryDto: CreateCategoryDto,
     userId: string,
-  ): Promise<CategoryEntity> {
+  ): Promise<CategoryResponseDto> {
     try {
       const category = this.categoryRepository.create({
         ...createCategoryDto,
         userId,
       });
 
-      return await this.categoryRepository.save(category);
+      const savedCategory = await this.categoryRepository.save(category);
+      return this.toResponseDto(savedCategory);
     } catch (error) {
       this.handleDBExceptions(error, createCategoryDto.name);
     }
@@ -60,12 +57,14 @@ export class CategoriesService {
     id: string,
     updateCategoryDto: UpdateCategoryDto,
     userId: string,
-  ): Promise<CategoryEntity> {
-    const category = await this.findOne(id, userId);
+  ): Promise<CategoryResponseDto> {
+    const category = await this.findOneEntity(id, userId);
 
     try {
       this.categoryRepository.merge(category, updateCategoryDto);
-      return await this.categoryRepository.save(category);
+      const savedCategory = await this.categoryRepository.save(category);
+
+      return this.toResponseDto(savedCategory);
     } catch (error) {
       const categoryName = updateCategoryDto.name || category.name;
       this.handleDBExceptions(error, categoryName);
@@ -80,9 +79,7 @@ export class CategoriesService {
     }
   }
 
-  // Capturar errores de PostgreSQL
-  private handleDBExceptions(error: any, categoryName?: string): never {
-    // Verificamos si el error es un objeto que contiene la propiedad 'code' (típico de TypeORM / Postgres)
+  private handleDBExceptions(error: unknown, categoryName?: string): never {
     if (
       typeof error === 'object' &&
       error !== null &&
@@ -94,7 +91,6 @@ export class CategoriesService {
       );
     }
 
-    // Aseguramos acceso seguro a 'message' y 'stack' mediante un cast controlado o verificación
     const err = error as { message?: string; stack?: string };
     this.logger.error(
       `Error de base de datos: ${err.message || 'Error desconocido'}`,
@@ -104,5 +100,30 @@ export class CategoriesService {
     throw new InternalServerErrorException(
       'Error inesperado al procesar la operación de categoría.',
     );
+  }
+
+  private async findOneEntity(
+    id: string,
+    userId: string,
+  ): Promise<CategoryEntity> {
+    const category = await this.categoryRepository.findOne({
+      where: { id, userId },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`La categoría con ID "${id}" no existe.`);
+    }
+
+    return category;
+  }
+
+  private toResponseDto(category: CategoryEntity): CategoryResponseDto {
+    return {
+      id: category.id,
+      name: category.name,
+      color: category.color,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+    };
   }
 }

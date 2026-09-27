@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { Request } from 'express';
 
 interface RequestWithUser extends Request {
   user?: Record<string, unknown>;
@@ -10,12 +11,12 @@ interface RequestWithUser extends Request {
 
 export const GetUser = createParamDecorator(
   (data: string | undefined, ctx: ExecutionContext): unknown => {
-    const req = ctx.switchToHttp().getRequest<RequestWithUser>();
-    const user = req.user;
+    const request = ctx.switchToHttp().getRequest<RequestWithUser>();
+    const user = request.user;
 
     if (!user) {
       throw new InternalServerErrorException(
-        'Usuario no encontrado en el request (asegúrate de resguardar la ruta con AuthGuard())',
+        'Contexto de autenticación no disponible',
       );
     }
 

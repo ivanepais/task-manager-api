@@ -21,7 +21,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CategoriesService } from './categories.service';
-import { CategoryEntity } from './entities/category.entity';
+import { CategoryResponseDto } from './dto/category-response.dto';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
@@ -41,13 +41,13 @@ export class CategoriesController {
   @ApiResponse({
     status: 200,
     description: 'Lista de categorías devuelta exitosamente.',
-    type: [CategoryEntity],
+    type: [CreateCategoryDto],
   })
   @ApiResponse({
     status: 401,
     description: 'Token JWT no provisto o inválido.',
   })
-  async findAll(@GetUser('id') userId: string): Promise<CategoryEntity[]> {
+  async findAll(@GetUser('id') userId: string): Promise<CategoryResponseDto[]> {
     return await this.categoriesService.findAll(userId);
   }
 
@@ -61,7 +61,7 @@ export class CategoriesController {
   @ApiResponse({
     status: 200,
     description: 'Categoría encontrada.',
-    type: CategoryEntity,
+    type: CategoryResponseDto,
   })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({
@@ -69,9 +69,9 @@ export class CategoriesController {
     description: 'Categoría no encontrada o no pertenece al usuario.',
   })
   async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
     @GetUser('id') userId: string,
-  ): Promise<CategoryEntity> {
+  ): Promise<CategoryResponseDto> {
     return await this.categoriesService.findOne(id, userId);
   }
 
@@ -81,7 +81,7 @@ export class CategoriesController {
   @ApiResponse({
     status: 201,
     description: 'Categoría creada exitosamente.',
-    type: CategoryEntity,
+    type: CategoryResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -95,7 +95,7 @@ export class CategoriesController {
   async create(
     @Body() createCategoryDto: CreateCategoryDto,
     @GetUser('id') userId: string,
-  ): Promise<CategoryEntity> {
+  ): Promise<CategoryResponseDto> {
     return await this.categoriesService.create(createCategoryDto, userId);
   }
 
@@ -109,7 +109,7 @@ export class CategoriesController {
   @ApiResponse({
     status: 200,
     description: 'Categoría actualizada exitosamente.',
-    type: CategoryEntity,
+    type: CategoryResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -122,10 +122,10 @@ export class CategoriesController {
     description: 'Ya existe una categoría con ese nombre para este usuario.',
   })
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
     @GetUser('id') userId: string,
-  ): Promise<CategoryEntity> {
+  ): Promise<CategoryResponseDto> {
     return await this.categoriesService.update(id, updateCategoryDto, userId);
   }
 
@@ -144,7 +144,7 @@ export class CategoriesController {
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Categoría no encontrada.' })
   async remove(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
     @GetUser('id') userId: string,
   ): Promise<void> {
     await this.categoriesService.remove(id, userId);

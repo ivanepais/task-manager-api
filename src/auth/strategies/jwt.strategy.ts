@@ -19,10 +19,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  /**
-   * Método que Passport ejecuta automáticamente tras verificar la firma y expiración del token.
-   * Lo que retorne este método se adjuntará automáticamente a req.user en cada petición.
-   */
   async validate(payload: JwtPayload): Promise<User> {
     const { id } = payload;
     const user = await this.usersService.findById(id);

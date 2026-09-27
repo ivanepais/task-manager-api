@@ -8,6 +8,8 @@ import {
   IsBoolean,
   IsArray,
   IsUUID,
+  ArrayUnique,
+  ArrayMaxSize,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -27,20 +29,23 @@ export class CreateTaskDto {
   )
   readonly title: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Descripción detallada de la tarea',
     example: 'Usando una función flecha.',
     maxLength: 500,
+    nullable: true,
   })
-  @IsString({ message: 'La descripción debe ser una cadena de texto.' })
-  @IsNotEmpty({ message: 'La descripción no puede estar vacía.' })
+  @IsOptional()
+  @IsString({
+    message: 'La descripción debe ser una cadena de texto.',
+  })
   @MaxLength(500, {
     message: 'La descripción no puede superar los 500 caracteres.',
   })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
-  readonly description: string;
+  readonly description?: string | null;
 
   @ApiPropertyOptional({
     description: 'Indica si la tarea se crea en estado completado o pendiente',
@@ -63,8 +68,11 @@ export class CreateTaskDto {
     message: 'Cada ID de categoría debe ser un UUID v7 válido.',
   })
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) =>
-    Array.isArray(value) ? [...new Set(value)] : value,
-  )
+  @ArrayUnique({
+    message: 'categoryIds no debe contener identificadores duplicados.',
+  })
+  @ArrayMaxSize(15, {
+    message: 'No se pueden asociar más de 15 categorías a una tarea.',
+  })
   categoryIds?: string[];
 }

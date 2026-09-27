@@ -7,11 +7,7 @@ import { CategoryEntity } from '../categories/entities/category.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [
-    // Inyecta el repositorio de TaskEntity en el ámbito de este módulo
-    TypeOrmModule.forFeature([TaskEntity, CategoryEntity]),
-    AuthModule,
-  ],
+  imports: [TypeOrmModule.forFeature([TaskEntity, CategoryEntity]), AuthModule],
   providers: [TasksService],
   controllers: [TasksController],
 })

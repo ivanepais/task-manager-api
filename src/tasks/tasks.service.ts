@@ -9,6 +9,7 @@ import { Repository, In } from 'typeorm';
 import { TaskEntity } from './entities/task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { TaskResponseDto } from './dto/task-response.dto';
 
 import { CategoryEntity } from '../categories/entities/category.entity';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
@@ -17,7 +18,6 @@ import { PaginatedTasksDto } from './dto/paginated-tasks.dto';
 @Injectable()
 export class TasksService {
   constructor(
-    // 1. Inyección del repositorio de TypeORM para la tabla 'tasks'
     @InjectRepository(TaskEntity)
     private readonly taskRepository: Repository<TaskEntity>,
 
@@ -37,12 +37,10 @@ export class TasksService {
       .leftJoinAndSelect('task.categories', 'category')
       .where('task.userId = :userId', { userId });
 
-    // Filtro por estado completed
     if (completed !== undefined) {
       query.andWhere('task.completed = :completed', { completed });
     }
 
-    // Búsqueda insensible a mayúsculas en título o descripción
     if (search) {
       query.andWhere(
         '(task.title ILIKE :search OR task.description ILIKE :search)',
@@ -50,16 +48,26 @@ export class TasksService {
       );
     }
 
-    // Filtro por categoría asociada
     if (categoryId) {
-      query.andWhere('category.id = :categoryId', { categoryId });
+      query.andWhere(
+        `EXISTS (
+          SELECT 1
+          FROM task_categories tc
+          WHERE tc.task_id = task.id
+            AND tc.category_id = :categoryId
+        )`,
+        { categoryId },
+      );
     }
 
-    const [data, total] = await query
+    const [tasks, total] = await query
       .orderBy('task.createdAt', 'DESC')
+      .addOrderBy('task.id', 'DESC')
       .take(limit)
       .skip(skip)
       .getManyAndCount();
+
+    const data = tasks.map((task) => this.toResponseDto(task));
 
     return {
       data,
@@ -72,32 +80,22 @@ export class TasksService {
     };
   }
 
-  async findOne(id: string, userId: string): Promise<TaskEntity> {
-    const task = await this.taskRepository.findOne({
-      where: { id, userId },
-      relations: {
-        categories: true,
-      },
-    });
-    if (!task) {
-      throw new NotFoundException(`La tarea con ID "${id}" no existe.`);
-    }
-    return task;
+  async findOne(id: string, userId: string): Promise<TaskResponseDto> {
+    const task = await this.findOneEntity(id, userId);
+
+    return this.toResponseDto(task);
   }
 
-  // Crea la tarea y asocia las categorías que pertenecen al usuario
   async create(
     createTaskDto: CreateTaskDto,
     userId: string,
-  ): Promise<TaskEntity> {
+  ): Promise<TaskResponseDto> {
     const { categoryIds, ...taskData } = createTaskDto;
     let categories: CategoryEntity[] = [];
 
     if (categoryIds && categoryIds.length > 0) {
-      const uniqueCategoryIds = [...new Set(categoryIds)];
-
       categories = await this.categoryRepository.find({
-        where: { id: In(uniqueCategoryIds), userId },
+        where: { id: In(categoryIds), userId },
       });
 
       if (categories.length !== categoryIds.length) {
@@ -113,24 +111,23 @@ export class TasksService {
       categories,
     });
 
-    return await this.taskRepository.save(newTask);
+    const savedTask = await this.taskRepository.save(newTask);
+
+    return this.toResponseDto(savedTask);
   }
 
-  // Actualiza datos y sincroniza las categorías si se pasan categoryIds
   async update(
     id: string,
     updateTaskDto: UpdateTaskDto,
     userId: string,
-  ): Promise<TaskEntity> {
+  ): Promise<TaskResponseDto> {
     const { categoryIds, ...taskData } = updateTaskDto;
-    const task = await this.findOne(id, userId);
+    const task = await this.findOneEntity(id, userId);
 
     if (categoryIds !== undefined) {
       if (categoryIds.length > 0) {
-        const uniqueCategoryIds = [...new Set(categoryIds)];
-
         const categories = await this.categoryRepository.find({
-          where: { id: In(uniqueCategoryIds), userId },
+          where: { id: In(categoryIds), userId },
         });
 
         if (categories.length !== categoryIds.length) {
@@ -145,36 +142,60 @@ export class TasksService {
     }
 
     this.taskRepository.merge(task, taskData);
-    return await this.taskRepository.save(task);
+    const savedTask = await this.taskRepository.save(task);
+    return this.toResponseDto(savedTask);
   }
 
-  // Elimina la tarea asegurando pertenencia al usuario
   async remove(id: string, userId: string): Promise<void> {
-    // Executa un UPDATE directo en SQL sin tocar relaciones ni realizar cascadas innecesarias
     const result = await this.taskRepository.softDelete({ id, userId });
 
-    // Si no afectó ninguna fila, la tarea no existía o no pertenecía a este usuario
     if (result.affected === 0) {
       throw new NotFoundException(`Tarea con ID "${id}" no encontrada`);
     }
   }
 
-  // Restaurar una tarea previamente borrada
-  async restore(id: string, userId: string): Promise<TaskEntity> {
+  async restore(id: string, userId: string): Promise<TaskResponseDto> {
+    const result = await this.taskRepository.restore({ id, userId });
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`La tarea con ID "${id}" no existe.`);
+    }
+
+    const restoredTask = await this.findOneEntity(id, userId);
+
+    return this.toResponseDto(restoredTask);
+  }
+
+  private async findOneEntity(id: string, userId: string): Promise<TaskEntity> {
     const task = await this.taskRepository.findOne({
       where: { id, userId },
-      withDeleted: true, // Permite encontrar registros con deletedAt !== null
-      relations: { categories: true },
+      relations: {
+        categories: true,
+      },
     });
 
     if (!task) {
       throw new NotFoundException(`La tarea con ID "${id}" no existe.`);
     }
 
-    if (!task.deletedAt) {
-      return task; // Ya estaba activa
-    }
+    return task;
+  }
 
-    return await this.taskRepository.recover(task);
+  private toResponseDto(task: TaskEntity): TaskResponseDto {
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      completed: task.completed,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      categories: task.categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        color: category.color,
+        createdAt: category.createdAt,
+        updatedAt: category.updatedAt,
+      })),
+    };
   }
 }

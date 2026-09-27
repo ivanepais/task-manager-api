@@ -32,7 +32,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Registrar un nuevo usuario',
     description:
-      'Crea una cuenta de usuario proporcionando un correo único, nombre completo y una contraseña segura.',
+      'Crea una cuenta de usuario proporcionando un correo único, nombre de usuario y una contraseña segura.',
   })
   @ApiResponse({
     status: 201,
@@ -46,7 +46,8 @@ export class AuthController {
   })
   @ApiResponse({
     status: 409,
-    description: 'El correo electrónico ya se encuentra registrado.',
+    description:
+      'El correo electrónico o el nombre de usuario ya se encuentra registrado.',
   })
   register(@Body() registerUserDto: RegisterUserDto): Promise<AuthResponseDto> {
     return this.authService.register(registerUserDto);

@@ -23,16 +23,17 @@ export class JwtRefreshStrategy extends PassportStrategy(
   }
 
   validate(req: Request, payload: JwtPayload): JwtPayloadWithRt {
-    console.log(
-      '===> 2. JWT Refresh Strategy invocada para usuario:',
-      payload.id,
-    );
     const authHeader = req.get('Authorization');
+
     if (!authHeader) {
       throw new UnauthorizedException('Refresh Token no proporcionado');
     }
 
     const refreshToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh Token no proporcionado');
+    }
 
     return {
       ...payload,

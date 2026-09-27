@@ -22,7 +22,8 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
-import { TaskEntity } from './entities/task.entity';
+import { TaskResponseDto } from './dto/task-response.dto';
+
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
@@ -67,7 +68,7 @@ export class TasksController {
   })
   @ApiResponse({
     status: 200,
-    type: TaskEntity,
+    type: TaskResponseDto,
     description: 'Tarea encontrada.',
   })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
@@ -76,26 +77,29 @@ export class TasksController {
     description: 'Tarea no encontrada o no pertenece al usuario.',
   })
   async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
     @GetUser('id') userId: string,
-  ): Promise<TaskEntity> {
+  ): Promise<TaskResponseDto> {
     return await this.tasksService.findOne(id, userId);
   }
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Crear una nueva tarea' })
   @ApiResponse({
     status: 201,
-    type: TaskEntity,
+    type: TaskResponseDto,
     description: 'Tarea creada exitosamente.',
   })
-  @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Los datos proporcionados no cumplen las reglas de validación.',
+  })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   async create(
     @Body() createTaskDto: CreateTaskDto,
     @GetUser('id') userId: string,
-  ): Promise<TaskEntity> {
+  ): Promise<TaskResponseDto> {
     return await this.tasksService.create(createTaskDto, userId);
   }
 
@@ -110,20 +114,20 @@ export class TasksController {
   })
   @ApiResponse({
     status: 200,
-    type: TaskEntity,
+    type: TaskResponseDto,
     description: 'Tarea actualizada exitosamente.',
   })
   @ApiResponse({
     status: 400,
-    description: 'Datos de actualización inválidos.',
+    description: 'El ID proporcionado no es un UUID v7 válido.',
   })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Tarea no encontrada.' })
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
     @Body() updateTaskDto: UpdateTaskDto,
     @GetUser('id') userId: string,
-  ): Promise<TaskEntity> {
+  ): Promise<TaskResponseDto> {
     return await this.tasksService.update(id, updateTaskDto, userId);
   }
 
@@ -139,10 +143,14 @@ export class TasksController {
     status: 204,
     description: 'Tarea marcada como eliminada correctamente.',
   })
+  @ApiResponse({
+    status: 400,
+    description: 'El ID proporcionado no es un UUID v7 válido.',
+  })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Tarea no encontrada.' })
   async remove(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
     @GetUser('id') userId: string,
   ): Promise<void> {
     await this.tasksService.remove(id, userId);
@@ -159,15 +167,19 @@ export class TasksController {
   })
   @ApiResponse({
     status: 200,
-    type: TaskEntity,
+    type: TaskResponseDto,
     description: 'Tarea restaurada exitosamente.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'El ID proporcionado no es un UUID v7 válido.',
   })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @ApiResponse({ status: 404, description: 'Tarea no encontrada.' })
   async restore(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '7' })) id: string,
     @GetUser('id') userId: string,
-  ): Promise<TaskEntity> {
+  ): Promise<TaskResponseDto> {
     return await this.tasksService.restore(id, userId);
   }
 }
