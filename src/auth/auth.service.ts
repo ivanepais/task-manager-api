@@ -28,7 +28,7 @@ export class AuthService {
   async register(registerUserDto: RegisterUserDto): Promise<AuthResponseDto> {
     const user = await this.usersService.create(registerUserDto);
     const tokens = await this.getTokens(user.id, user.email);
-    await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
+    await this.hashAndStoreRefreshToken(user.id, tokens.refreshToken);
 
     return { user, ...tokens };
   }
@@ -61,7 +61,7 @@ export class AuthService {
 
     const tokens = await this.getTokens(user.id, user.email);
 
-    await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
+    await this.hashAndStoreRefreshToken(user.id, tokens.refreshToken);
 
     return {
       user: userResponse,
@@ -92,7 +92,7 @@ export class AuthService {
     }
 
     const tokens = await this.getTokens(user.id, user.email);
-    await this.updateHashedRefreshToken(user.id, tokens.refreshToken);
+    await this.hashAndStoreRefreshToken(user.id, tokens.refreshToken);
 
     return tokens;
   }
@@ -126,7 +126,7 @@ export class AuthService {
     };
   }
 
-  private async updateHashedRefreshToken(
+  private async hashAndStoreRefreshToken(
     userId: string,
     refreshToken: string,
   ): Promise<void> {
