@@ -27,7 +27,7 @@ COPY package*.json ./
 
 RUN npm ci --only=production && npm cache clean --force
 
-COPY --from=builder /usr/src/dist ./dist
+COPY --from=builder /usr/src/app/dist ./dist
 
 EXPOSE 8000
 
