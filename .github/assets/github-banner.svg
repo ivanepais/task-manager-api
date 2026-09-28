@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" width="100%" height="100%">
+  <defs>
+    <!-- Sombra suave para modo oscuro -->
+    <filter id="drop-shadow-dark" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Marco Exterior de la Ventana / Fondo Oscuro -->
+  <rect x="10" y="10" width="880" height="300" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1" filter="url(#drop-shadow-dark)"/>
+
+  <!-- Barra Superior (Header Principal) -->
+  <path d="M 10 20 C 10 14.477 14.477 10 20 10 L 880 10 C 885.523 10 890 14.477 890 20 L 890 52 L 10 52 Z" fill="#09090b" />
+
+  <!-- Logo de Swagger -->
+  <circle cx="36" cy="31" r="11" fill="#85ea2d"/>
+  <text x="36" y="35" text-anchor="middle" font-family="monospace" font-size="11" font-weight="900" fill="#09090b">{ }</text>
+  <text x="54" y="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="18" fill="#ffffff">swagger</text>
+  
+  <rect x="135" y="24" width="22" height="13" rx="3" fill="#85ea2d"/>
+  <text x="146" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="8" fill="#09090b" text-anchor="middle">UI</text>
+
+  <!-- Input de URL / Explore Box -->
+  <rect x="560" y="20" width="315" height="24" rx="4" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+  <text x="572" y="36" font-family="SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace" font-size="10" fill="#85ea2d">https://api.domain.com/api/v1/docs</text>
+  <rect x="805" y="22" width="66" height="20" rx="3" fill="#4d7c0f"/>
+  <text x="838" y="35" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">Explore</text>
+
+  <!-- Información de la API -->
+  <text x="35" y="84" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="800" fill="#f4f4f5">Task Management API</text>
+  
+  <!-- Badges de Versión -->
+  <rect x="255" y="70" width="44" height="18" rx="9" fill="#85ea2d"/>
+  <text x="277" y="83" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-size="10" font-weight="800" fill="#09090b">1.0.0</text>
+  
+  <rect x="305" y="70" width="56" height="18" rx="9" fill="#27272a"/>
+  <text x="333" y="83" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" text-anchor="middle" font-size="10" font-weight="700" fill="#a1a1aa">OAS 3.0</text>
+
+  <text x="35" y="103" font-family="SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace" font-size="11" fill="#71717a">[ Base URL: /api/v1 ]</text>
+
+  <!-- Botón Authorize -->
+  <rect x="740" y="70" width="135" height="30" rx="4" fill="none" stroke="#49cc90" stroke-width="2"/>
+  <path d="M 758 82 L 758 80 A 3 3 0 0 1 764 80 L 764 82 M 756 82 L 766 82 L 766 89 L 756 89 Z" fill="none" stroke="#49cc90" stroke-width="1.5"/>
+  <text x="810" y="89" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#49cc90">Authorize</text>
+
+  <!-- Separador Horizontal -->
+  <line x1="35" y1="116" x2="875" y2="116" stroke="#27272a" stroke-width="1"/>
+
+  <!-- ENDPOINTS -->
+
+  <!-- Endpoint 1: POST /auth/login -->
+  <g transform="translate(0, 0)">
+    <rect x="35" y="128" width="840" height="36" rx="4" fill="#022c22" stroke="#059669" stroke-width="1"/>
+    <rect x="42" y="133" width="58" height="26" rx="3" fill="#49cc90"/>
+    <text x="71" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="11" fill="#09090b" text-anchor="middle">POST</text>
+    <text x="110" y="151" font-family="SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace" font-size="12" font-weight="700" fill="#ecfdf5">/api/v1/auth/login</text>
+    <text x="290" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#a1a1aa">Autenticación de usuario y generación de JWT</text>
+    <path d="M 852 143 L 852 141 A 2.5 2.5 0 0 1 857 141 L 857 143 M 850 143 L 859 143 L 859 150 L 850 150 Z" fill="none" stroke="#71717a" stroke-width="1.3"/>
+  </g>
+
+  <!-- Endpoint 2: GET /tasks -->
+  <g transform="translate(0, 42)">
+    <rect x="35" y="128" width="840" height="36" rx="4" fill="#172554" stroke="#2563eb" stroke-width="1"/>
+    <rect x="42" y="133" width="58" height="26" rx="3" fill="#61affe"/>
+    <text x="71" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="11" fill="#09090b" text-anchor="middle">GET</text>
+    <text x="110" y="151" font-family="SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace" font-size="12" font-weight="700" fill="#eff6ff">/api/v1/tasks</text>
+    <text x="290" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#a1a1aa">Obtener lista de tareas con filtros y paginación</text>
+    <path d="M 852 143 L 852 141 A 2.5 2.5 0 0 1 857 141 L 857 143 M 850 143 L 859 143 L 859 150 L 850 150 Z" fill="none" stroke="#71717a" stroke-width="1.3"/>
+  </g>
+
+  <!-- Endpoint 3: POST /tasks -->
+  <g transform="translate(0, 84)">
+    <rect x="35" y="128" width="840" height="36" rx="4" fill="#022c22" stroke="#059669" stroke-width="1"/>
+    <rect x="42" y="133" width="58" height="26" rx="3" fill="#49cc90"/>
+    <text x="71" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="11" fill="#09090b" text-anchor="middle">POST</text>
+    <text x="110" y="151" font-family="SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace" font-size="12" font-weight="700" fill="#ecfdf5">/api/v1/tasks</text>
+    <text x="290" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#a1a1aa">Crear una nueva tarea asociada al usuario</text>
+    <path d="M 852 143 L 852 141 A 2.5 2.5 0 0 1 857 141 L 857 143 M 850 143 L 859 143 L 859 150 L 850 150 Z" fill="none" stroke="#71717a" stroke-width="1.3"/>
+  </g>
+
+  <!-- Endpoint 4: DELETE /tasks/{id} -->
+  <g transform="translate(0, 126)">
+    <rect x="35" y="128" width="840" height="36" rx="4" fill="#450a0a" stroke="#dc2626" stroke-width="1"/>
+    <rect x="42" y="133" width="58" height="26" rx="3" fill="#f93e3e"/>
+    <text x="71" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="10" fill="#ffffff" text-anchor="middle">DELETE</text>
+    <text x="110" y="151" font-family="SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace" font-size="12" font-weight="700" fill="#fef2f2">/api/v1/tasks/{id}</text>
+    <text x="290" y="150" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#a1a1aa">Eliminar tarea por ID</text>
+    <path d="M 852 143 L 852 141 A 2.5 2.5 0 0 1 857 141 L 857 143 M 850 143 L 859 143 L 859 150 L 850 150 Z" fill="none" stroke="#71717a" stroke-width="1.3"/>
+  </g>
+</svg>

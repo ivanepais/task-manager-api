@@ -10,7 +10,6 @@ import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
-    // Carga variables de entorno globalmente
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
@@ -18,10 +17,9 @@ import { CategoriesModule } from './categories/categories.module';
         ENVIRONMENT: Joi.string()
           .valid('development', 'production', 'test')
           .default('development'),
-        // Si no existe en el .env, la app NO arrancará y lanzará una excepción clara
         API_PREFIX: Joi.string().default('api/v1'),
+        SHOW_SWAGGER: Joi.string().default('false'),
 
-        // Credenciales de PostgreSQL
         DB_HOST: Joi.string().required(),
         DB_PORT: Joi.number().default(5432),
         DB_USERNAME: Joi.string().required(),
@@ -34,24 +32,25 @@ import { CategoriesModule } from './categories/categories.module';
       }),
     }),
 
-    // Conexión asíncrona a la Base de Datos
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_DATABASE'),
-        // Carga automáticamente entidades registradas en módulos hijos
-        autoLoadEntities: true,
-        // Sincroniza automáticamente cambios de entidades con la BD en desarrollo.
-        //
-        synchronize: false,
-        logging: ['query', 'error'],
-      }),
+      useFactory: (configService: ConfigService) => {
+        const isProd = configService.get<string>('ENVIRONMENT') === 'production';
+
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST'),
+          port: configService.get<number>('DB_PORT'),
+          username: configService.get<string>('DB_USERNAME'),
+          password: configService.get<string>('DB_PASSWORD'),
+          database: configService.get<string>('DB_DATABASE'),
+          autoLoadEntities: true,
+          synchronize: false,
+          logging: isProd ? ['error'] : ['query', 'error'],
+          ssl: isProd ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
 
     AuthModule,
