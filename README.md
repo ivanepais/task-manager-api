@@ -8,11 +8,11 @@
 
 ## 💻 App
 
-> 🚀 **Try the API!** using the link: **[task-manager-api](https://ivanepais.github.io/task-manager-api)** or click on the banner.
+> **Try the API!** using the link: **[task-manager-api](https://ivanepais.github.io/task-manager-api)** or click on the banner.
 
 * **Framework:** [NestJS](https://nestjs.com/) (Node.js v24)
 * **ORM:** [TypeORM](https://typeorm.io/)
-* **DB:** PostgreSQL / [Neon.tech](https://neon.tech/) (Serverless Postgres con SSL)
+* **DB:** PostgreSQL / [Neon.tech](https://neon.tech/) (Serverless Postgres with SSL)
 * **Doc:** Swagger UI (`@nestjs/swagger`)
 * **Auth:** JWT con Refresh Tokens
 * **Container:** Docker (Multi-stage build)
@@ -34,6 +34,8 @@ Docker: v29.8^
 
 PostgreSQL: local or Docker
 
+---
+
 1. **Clone the repo:**
 Download the copy of the project to your machine using the terminal.
 
@@ -44,13 +46,18 @@ git clone https://github.com/ivanepais/task-manager-api.git
 2. **Access the repo:**
 Navigate to the root folder where the project settings are located.
 
-```sh
-$ npm install
+```bash
 cd task-manager-api
 ```
 
 3. **Install dependencies:**
 With NodeJS, you can download and install all the necessary packages and libraries specified in the configuration file.
+
+```bash
+$ npm install
+```
+
+---
 
 
 ## Compile and run the project
@@ -66,11 +73,7 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-
-## 📄 License
-
-This project is licensed under the MIT License.
-See the file [LICENSE](LICENSE) for more details.
+---
 
 
 ## Run tests
@@ -79,4 +82,12 @@ See the file [LICENSE](LICENSE) for more details.
 $ npm run test
 ```
 
+
+---
+
+
+## 📄 License
+
+This project is licensed under the MIT License.
+See the file [LICENSE](LICENSE) for more details.
 
