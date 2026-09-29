@@ -8,7 +8,7 @@
 
 ## 💻 App
 
-> **Try the API!** using the link: **[task-manager-api](https://ivanepais.github.io/task-manager-api)** or click on the banner.
+> **Try the API!** using the link: **[task-manager-api](https://task-manager-api-9gi8.onrender.com/api/v1/docs)** or click on the banner.
 
 * **Framework:** [NestJS](https://nestjs.com/) (Node.js v24)
 * **ORM:** [TypeORM](https://typeorm.io/)
