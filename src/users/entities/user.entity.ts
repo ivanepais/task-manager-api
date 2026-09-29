@@ -37,7 +37,7 @@ export class User {
   password: string;
 
   @Index('users_username_unique', { unique: true })
-  @Column({ length: 30 })
+  @Column({ name: 'username', length: 30 })
   userName: string;
 
   @Column({ default: true, name: 'is_active' })
