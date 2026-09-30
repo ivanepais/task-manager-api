@@ -16,7 +16,35 @@
 * **Doc:** Swagger UI (`@nestjs/swagger`)
 * **Auth:** JWT con Refresh Tokens
 * **Container:** Docker (Multi-stage build)
-* **Hosting:** [Koyeb](https://www.koyeb.com/)
+* **Hosting:** [Render](https://www.render.com/)
+
+---
+
+## ✨ Características Principales
+
+* 🔒 **Authentication and Authorization:** Secure registration and login with JWT and refresh token rotation.
+* ✅ **Crud:** Task, categories management and filters.
+* 🛡️ **Data validation:** Global use of `ValidationPipe` with strict DTOs (`class-validator` and `class-transformer`).
+* 🗄️ **DB Migrations:** Schema version control using TypeORM CLI.
+* 📄 **Interactive Documentation:** Integrated Swagger UI with Bearer token support.
+
+
+---
+
+## Project Structure
+
+```text
+src/
+├── auth/          # auth (Login, Register, Refresh)
+├── users/         # users module: entity, dtos
+├── tasks/         # tasks module: entity, dtos
+├── categories/    # categories module: entity, dtos
+├── common/        # Filters
+├── database/      # TypeORM config, migraciones
+│   └── migrations/
+├── app.module.ts  # Main module, validation with Joi
+└── main.ts        # Entry point, Swagger UI
+```
 
 ---
 
