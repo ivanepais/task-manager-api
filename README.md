@@ -20,7 +20,7 @@
 
 ---
 
-## ✨ Características Principales
+## ✨ Features
 
 * 🔒 **Authentication and Authorization:** Secure registration and login with JWT and refresh token rotation.
 * ✅ **Crud:** Task, categories management and filters.
